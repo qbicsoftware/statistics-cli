@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 /**
  * @author fhanssen
+ * This needs to be synced with the ChartSetting class from the statistics tool.
+ * Don't delete any Getters or Setters, even if they are shown as unused. SnakeYAMl requieres them.
  */
 public class ChartSettings {
 
@@ -14,16 +16,11 @@ public class ChartSettings {
     private String xAxisTitle;
     private String yAxisTitle;
 
-    //Different Constructors
-    public ChartSettings(){
-
-    }
 
     public ChartSettings(String title){
         this.title = title;
     }
 
-    //
 
     //Getters & Setters: Even if shown as not used, VITAL for YAML parser
 
