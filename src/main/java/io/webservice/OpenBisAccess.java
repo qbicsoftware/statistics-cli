@@ -3,6 +3,10 @@ package io.webservice;
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
 
+/**
+ * @author fhanssen
+ * Creates access to openBis by generatin the sessionToken.
+ */
 public class OpenBisAccess {
 
     private final String URL;

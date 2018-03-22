@@ -6,6 +6,9 @@ import org.apache.commons.cli.*;
 
 import java.io.IOException;
 
+/**
+ * @author fhanssen
+ */
 public class Main {
 
     public static void main(String[] args) {
@@ -34,11 +37,8 @@ public class Main {
 
         try {
             MainController mainController = new MainController(new InputFileParser(cmd.getOptionValue("input")));
-            mainController.query();
-            mainController.writeToFile();
-            mainController.logout();
         }catch(IOException e){
-            System.out.println("File could not be parsed");
+            System.out.println("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing.");
             e.printStackTrace();
         }
 

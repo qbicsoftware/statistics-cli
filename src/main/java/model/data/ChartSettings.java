@@ -2,6 +2,9 @@ package model.data;
 
 import java.util.ArrayList;
 
+/**
+ * @author fhanssen
+ */
 public class ChartSettings {
 
     private ArrayList<Object> xCategories;

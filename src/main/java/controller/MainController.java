@@ -10,6 +10,12 @@ import model.data.MainConfig;
 
 import java.util.Map;
 
+/**
+ * @author fhanssen
+ * MainController handles all major oprations. It is called from the main class, establishes a connection to OpenBis then
+ * executes all queries and adds them to the config file. Lastly the connection has to be closed.
+ */
+
 public class MainController {
 
     private final OpenBisAccess openBisAccess;
@@ -19,29 +25,48 @@ public class MainController {
     //Query classes
     private final AQuery organismCountQuery;
 
-
-    public MainController(InputFileParser inputFileParser){
+    public MainController(InputFileParser inputFileParser) {
 
         this.openBisAccess = new OpenBisAccess(inputFileParser.getOpenBisUrl(),
-                                                inputFileParser.getOpenBisUserName(),
-                                                inputFileParser.getOpenBisPassword());
+                inputFileParser.getOpenBisUserName(),
+                inputFileParser.getOpenBisPassword());
         this.outputFilename = inputFileParser.getOutputFilename();
         this.charts = new MainConfig();
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+
+
+            query();
+
+
+        writeToFile();
+        logout();
     }
 
-    public void query(){
-        Map<String, ChartConfig> organismCounts = organismCountQuery.query();
-        organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
+    /**
+     * This method executes all queries. If new queries should be run, they need to be started from here. The resulting
+     * ChartConfigs need to be added to the MainConfig charts.
+     */
+    private void query() {
+
+        try {
+            Map<String, ChartConfig> organismCounts = organismCountQuery.query();
+            organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+
+        //TODO 1: Add your query call here
+        //TODO 2: Add your resulting chart config(s) to 'charts'
     }
 
-    public void writeToFile(){
+    private void writeToFile() {
         YAMLWriter.writeToFile(outputFilename, charts);
     }
 
-    public void logout(){
+    private void logout() {
         openBisAccess.logout();
     }
 }

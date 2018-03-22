@@ -3,6 +3,10 @@ package model.data;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author fhanssen
+ */
+
 public class MainConfig {
 
     private Map<String, ChartConfig> charts = new HashMap<>();

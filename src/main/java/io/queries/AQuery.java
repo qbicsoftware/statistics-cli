@@ -5,6 +5,11 @@ import model.data.ChartConfig;
 
 import java.util.Map;
 
+/**
+ * @author fhanssen
+ * All query classes need to to implement this abstract class, in order to ensure they have all expected methods.
+ * The abstracte class holds the needed openbis credentials.
+ */
 public abstract class AQuery {
 
     private final IApplicationServerApi v3;
@@ -24,6 +29,8 @@ public abstract class AQuery {
         return sessionToken;
     }
 
-    abstract public Map<String, ChartConfig> query();
+    abstract public Map<String, ChartConfig> query() throws Exception;
+
+    //TODO 4: extend this class to your own query class (see OrganismCountPresenter for an example)
 
 }

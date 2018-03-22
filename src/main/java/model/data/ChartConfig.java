@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author fhanssen
+ */
 public class ChartConfig {
 
     private ChartSettings settings;

@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * @author fhanssen
+ * Class parses the input credentials stored in a config file.
+ */
 public class InputFileParser {
 
     private final BufferedReader bufferedReader;
