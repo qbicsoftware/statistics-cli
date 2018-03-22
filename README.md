@@ -23,7 +23,7 @@ In order to add new data to your file, you essentially only need to a add new  c
 it properly. The steps are highlighted in the code as TODOs:
 
 1. Create a new class in package io.queries, which extends AQuery:
-    In this class you should retrieve your data form the source (OpenBis, GitHub, etc.), format it and 
+    In this class you should retrieve your data from the source (OpenBis, GitHub, etc.), format it and 
     create the ChartConfig files for all charts working with that data. 
     Example class: OrganismCountQuery
     
