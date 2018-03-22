@@ -2,6 +2,8 @@ package main;
 
 import controller.MainController;
 import io.input.InputFileParser;
+import logging.Log4j2Logger;
+import logging.Logger;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -11,8 +13,12 @@ import java.io.IOException;
  */
 public class Main {
 
+    private static Logger logger;
+
     public static void main(String[] args) {
 
+        System.setProperty("log4j.configurationFile","/Users/qbic/Documents/QBiC/statistics-data-retrieval-openbis/src/main/resources/log4j2.xml");
+        logger = new Log4j2Logger(Main.class);
         //TODO at some point have main only start the program
 
         Options options = new Options();
@@ -28,7 +34,8 @@ public class Main {
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
+            logger.error("Could not parse cmd input: " + e.getMessage());
+            logger.info("statisitics-data-retrieval-webservice" + options);
             formatter.printHelp("statisitics-data-retrieval-webservice", options);
 
             System.exit(1);
@@ -38,8 +45,7 @@ public class Main {
         try {
             MainController mainController = new MainController(new InputFileParser(cmd.getOptionValue("input")));
         }catch(IOException e){
-            System.out.println("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing.");
-            e.printStackTrace();
+            logger.error("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing." + e.getMessage());
         }
 
     }

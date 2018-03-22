@@ -5,6 +5,8 @@ import io.webservice.OpenBisAccess;
 import io.queries.AQuery;
 import io.queries.OrganismCountQuery;
 import io.writer.YAMLWriter;
+import logging.Log4j2Logger;
+import logging.Logger;
 import model.data.ChartConfig;
 import model.data.MainConfig;
 
@@ -18,6 +20,9 @@ import java.util.Map;
 
 public class MainController {
 
+    private static Logger logger = new Log4j2Logger(MainController.class);
+
+
     private final OpenBisAccess openBisAccess;
     private final String outputFilename;
     private final MainConfig charts;
@@ -27,20 +32,26 @@ public class MainController {
 
     public MainController(InputFileParser inputFileParser) {
 
+        logger.info("Establish access to OpenBis");
+
         this.openBisAccess = new OpenBisAccess(inputFileParser.getOpenBisUrl(),
                 inputFileParser.getOpenBisUserName(),
                 inputFileParser.getOpenBisPassword());
+
         this.outputFilename = inputFileParser.getOutputFilename();
+
         this.charts = new MainConfig();
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
 
+        logger.info("Start queries");
+        query();
 
-            query();
-
-
+        logger.info("Write results to " + outputFilename);
         writeToFile();
+
+        logger.info("Log out of OpenBis");
         logout();
     }
 
@@ -51,10 +62,12 @@ public class MainController {
     private void query() {
 
         try {
+            logger.info("Run OrganismCounts query");
             Map<String, ChartConfig> organismCounts = organismCountQuery.query();
             organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
         }catch(Exception e){
             e.printStackTrace();
+            logger.info("Queries failed with: " + e.getMessage());
         }
 
 

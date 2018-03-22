@@ -14,6 +14,8 @@ import io.queries.utils.lexica.OpenBisTerminology;
 import io.queries.utils.lexica.SpaceBlackList;
 import io.queries.utils.lexica.SuperKingdoms;
 import io.webservice.REST;
+import logging.Log4j2Logger;
+import logging.Logger;
 import model.data.ChartConfig;
 import model.data.ChartSettings;
 
@@ -31,6 +33,9 @@ import java.util.regex.Pattern;
  * are shown in the superkingdom resolution.
  */
 public class OrganismCountQuery extends AQuery {
+
+    private static Logger logger = new Log4j2Logger(OrganismCountQuery.class);
+
 
     private final String ncbiTaxanomyRestUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
 
@@ -57,16 +62,29 @@ public class OrganismCountQuery extends AQuery {
     @Override
     public Map<String, ChartConfig> query(){
 
+        logger.info("Run organism count query");
+
         clearMaps();
+
+        logger.info("Retrieve names of taxonomy ids.");
         mapTaxonomyIDToName();
+
+        logger.info("Count OpenBis samples on species basis.");
         countSamplesPerOrganism(retrieveSamplesFromOpenBis());
+
+        logger.info("Map species to domain and genus");
         setOrganismToDomainAndGenusMap();
+
+        logger.info("Count samples on domain basis");
         generateDomainCountMap();
+
+        logger.info("Retrieve species with a larger share than " + largeThreshold + " in their domain.");
         filterForLargeOrganisms();
 
         for(String domain : domainCountMap.keySet()){
             if(! (domain.equals("Other") || domain.equals("unclassified sequences"))
                     && SuperKingdoms.getList().contains(domain)){ //exclude species with large share, which were added to superkingdom resolution from being further classified
+                logger.info("Create genus and species count map of " + domain);
                 genusCountMaps.put(domain, new HashMap<>());
                 speciesCountMaps.put(domain, new HashMap<>());
             }
@@ -76,6 +94,8 @@ public class OrganismCountQuery extends AQuery {
         generateSpeciesCountMap();
 
         Map<String, ChartConfig> result = new HashMap<>();
+
+        logger.info("Set results.");
 
         //Add Superkingdom to config
         result.put("SuperKingdom", generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
@@ -166,7 +186,7 @@ public class OrganismCountQuery extends AQuery {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("NCBI access to retrieve names of tax ids failed: " + e.getMessage());
         }
     }
 
@@ -244,6 +264,8 @@ public class OrganismCountQuery extends AQuery {
      * @return ChartConfig
      */
     private ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
+
+        logger.info("Generate ChartConfig for: " + name);
 
         ChartConfig organismCount = new ChartConfig();
 

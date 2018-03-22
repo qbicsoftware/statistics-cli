@@ -1,5 +1,8 @@
 package io.input;
 
+import logging.Log4j2Logger;
+import logging.Logger;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,6 +13,9 @@ import java.io.IOException;
  */
 public class InputFileParser {
 
+    private static Logger logger = new Log4j2Logger(InputFileParser.class);
+
+
     private final BufferedReader bufferedReader;
 
     private String openBisUrl;
@@ -19,6 +25,7 @@ public class InputFileParser {
 
     public InputFileParser(String inputFileName) throws IOException{
         bufferedReader = new BufferedReader(new FileReader(inputFileName));
+        logger.info("Parse input file: " + inputFileName);
         parse();
     }
 
@@ -33,6 +40,7 @@ public class InputFileParser {
             }
             if(line.startsWith("openBisUserName")){
                 openBisUserName = value;
+                logger.info("User " + openBisUserName + " is logged in.");
             }
             if(line.startsWith("openBisPassword")){
                 openBisPassword = value;

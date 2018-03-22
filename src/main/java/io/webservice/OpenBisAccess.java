@@ -2,12 +2,16 @@ package io.webservice;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
+import logging.Log4j2Logger;
+import logging.Logger;
 
 /**
  * @author fhanssen
  * Creates access to openBis by generatin the sessionToken.
  */
 public class OpenBisAccess {
+
+    private static Logger logger = new Log4j2Logger(OpenBisAccess.class);
 
     private final String URL;
     private final int TIMEOUT = 10000;
@@ -24,6 +28,7 @@ public class OpenBisAccess {
 
         v3 = HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, URL, TIMEOUT);
         login();
+        logger.info("Login to OpenBis");
     }
 
     private void login() {
