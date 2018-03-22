@@ -31,6 +31,6 @@ public abstract class AQuery {
 
     abstract public Map<String, ChartConfig> query() throws Exception;
 
-    //TODO 4: extend this class to your own query class (see OrganismCountPresenter for an example)
+    //TODO 1: extend this class to your own query class (see OrganismCountPresenter for an example)
 
 }

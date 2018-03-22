@@ -58,8 +58,8 @@ public class MainController {
         }
 
 
-        //TODO 1: Add your query call here
-        //TODO 2: Add your resulting chart config(s) to 'charts'
+        //TODO 3: Add your query call here
+        //TODO 4: Add your resulting chart config(s) to 'charts'
     }
 
     private void writeToFile() {
