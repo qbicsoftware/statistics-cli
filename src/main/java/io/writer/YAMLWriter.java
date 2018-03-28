@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public final class YAMLWriter {
 
-    public static void writeToFile(String outputFile, MainConfig config){
+    public static void writeToFile(String outputFile, MainConfig config) {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setPrettyFlow(true);
@@ -18,7 +18,7 @@ public final class YAMLWriter {
         try {
             FileWriter writer = new FileWriter(outputFile);
             yaml.dump(config, writer);
-        }catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

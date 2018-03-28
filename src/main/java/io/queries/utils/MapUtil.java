@@ -2,7 +2,11 @@ package io.queries.utils;
 
 import java.util.Map;
 
-public final class Helpers {
+public final class MapUtil {
+
+    private MapUtil() {
+        throw new UnsupportedOperationException("MapUtil is a utility class, do not create objects of it!");
+    }
 
     public static void addEntryToStringCountMap(Map<String, Integer> map, String key, int count) {
         if (map.containsKey(key)) {

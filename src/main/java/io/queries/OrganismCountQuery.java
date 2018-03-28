@@ -8,7 +8,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriter
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
-import io.queries.utils.Helpers;
+import io.queries.utils.MapUtil;
 import io.queries.utils.OpenBisTerminology;
 import io.queries.utils.SpaceBlackList;
 import io.webservice.REST;
@@ -25,8 +25,10 @@ import java.util.regex.Pattern;
 public class OrganismCountQuery extends AQuery {
 
     private enum DOMAIN {Bacteria, Eukaryota, Viruses}
+
     private enum TYPES {Domain, _Genus, _Species}
-    private final String ncbiTaxanomyRestUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
+
+    private final String NCBITAXANOMYRESTURL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
 
     private final Map<String, Integer> organismCountMap = new HashMap<>();
     private final Map<String, String> organismDomainMap = new HashMap<>();
@@ -43,13 +45,15 @@ public class OrganismCountQuery extends AQuery {
     private final Map<String, Integer> bacteriaSpeciesCountMap = new HashMap<>();
     private final Map<String, Integer> virusesSpeciesCountMap = new HashMap<>();
 
+    private final List<Map<String, Integer>> resultMaps = List.of(domainCountMap, eukaryotaGenusCountMap, bacteriaGenusCountMap, virusesGenusCountMap,
+            eukaryotaSpeciesCountMap, bacteriaSpeciesCountMap, virusesSpeciesCountMap);
+
     public OrganismCountQuery(IApplicationServerApi v3, String sessionToken) {
         super(v3, sessionToken);
     }
 
     @Override
     public Map<String, ChartConfig> query() {
-
         clearMaps();
         countSamplesPerOrganism(retrieveSamplesFromOpenBis());
         setOrganismToDomainAndGenusMap();
@@ -64,36 +68,23 @@ public class OrganismCountQuery extends AQuery {
         result.put(TYPES.Domain.toString(), generateChartConfig(domainCountMap, TYPES.Domain.toString(), "Sample Count by Domain"));
 
         //add Eukaryota_Genus etc to config
-        result.put(DOMAIN.Eukaryota.toString().concat(TYPES._Genus.toString()), generateChartConfig(eukaryotaGenusCountMap,  DOMAIN.Eukaryota.toString(), "Sample Count Eukaryota"));
-        result.put(DOMAIN.Bacteria.toString().concat(TYPES._Genus.toString()), generateChartConfig(bacteriaGenusCountMap,  DOMAIN.Bacteria.toString(), "Sample Count Bacteria"));
-        result.put(DOMAIN.Viruses.toString().concat(TYPES._Genus.toString()), generateChartConfig(virusesGenusCountMap,  DOMAIN.Viruses.toString(), "Sample Count Viruses"));
+        result.put(DOMAIN.Eukaryota.toString().concat(TYPES._Genus.toString()), generateChartConfig(eukaryotaGenusCountMap, DOMAIN.Eukaryota.toString(), "Sample Count Eukaryota"));
+        result.put(DOMAIN.Bacteria.toString().concat(TYPES._Genus.toString()), generateChartConfig(bacteriaGenusCountMap, DOMAIN.Bacteria.toString(), "Sample Count Bacteria"));
+        result.put(DOMAIN.Viruses.toString().concat(TYPES._Genus.toString()), generateChartConfig(virusesGenusCountMap, DOMAIN.Viruses.toString(), "Sample Count Viruses"));
 
         //add Eukaryota_Species etc to config
-        result.put(DOMAIN.Eukaryota.toString().concat(TYPES._Species.toString()), generateChartConfig(eukaryotaSpeciesCountMap,  DOMAIN.Eukaryota.toString(), ""));
+        result.put(DOMAIN.Eukaryota.toString().concat(TYPES._Species.toString()), generateChartConfig(eukaryotaSpeciesCountMap, DOMAIN.Eukaryota.toString(), ""));
         result.put(DOMAIN.Bacteria.toString().concat(TYPES._Species.toString()), generateChartConfig(bacteriaSpeciesCountMap, DOMAIN.Bacteria.toString(), ""));
-        result.put(DOMAIN.Viruses.toString().concat(TYPES._Species.toString()), generateChartConfig(virusesSpeciesCountMap,  DOMAIN.Viruses.toString(), ""));
+        result.put(DOMAIN.Viruses.toString().concat(TYPES._Species.toString()), generateChartConfig(virusesSpeciesCountMap, DOMAIN.Viruses.toString(), ""));
 
         return result;
     }
 
-    private void clearMaps(){
-        domainCountMap.clear();
-        organismCountMap.clear();
-        organismDomainMap.clear();
-        organismGenusMap.clear();
-
-        eukaryotaSpeciesCountMap.clear();
-        eukaryotaGenusCountMap.clear();
-
-        bacteriaGenusCountMap.clear();
-        bacteriaSpeciesCountMap.clear();
-
-        virusesGenusCountMap.clear();
-        virusesSpeciesCountMap.clear();
+    private void clearMaps() {
+        resultMaps.forEach(Map::clear);
     }
 
     private SearchResult<Sample> retrieveSamplesFromOpenBis() {
-
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
         sampleSourcesCriteria.withSpace();
         sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.get());
@@ -104,53 +95,50 @@ public class OrganismCountQuery extends AQuery {
         fetchOptions.withSpace();
         fetchOptions.withProperties();
 
-        SearchResult<Sample> sampleSources = super.getV3().searchSamples(super.getSessionToken(), sampleSourcesCriteria, fetchOptions);
-
-        return sampleSources;
+        return super.getV3().searchSamples(super.getSessionToken(), sampleSourcesCriteria, fetchOptions);
     }
 
-    private void countSamplesPerOrganism(SearchResult<Sample> sampleSources){
+    private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
         //Iterate over all search results
         for (Sample experiment : sampleSources.getObjects()) {
             //If sample does not belong to a blacklisted space, then increment its organism count
-            if (!SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
-                Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.get()), 1);
+            if (!SpaceBlackList.getValuesStringList().contains(experiment.getSpace().getCode())) {
+                MapUtil.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.get()), 1);
             }
         }
     }
 
     private void setOrganismToDomainAndGenusMap() {
-        for (String organism : organismCountMap.keySet()) {
-
-            if (organism.equals("0")) { //0 = 'Other' in domain and can't be queried to NCBI
-                organismDomainMap.put(organism, "Other");
-            } else {
-                retrieveDomainAndGenusFromNCBI(organism);
-            }
-        }
+        organismCountMap.keySet().forEach(organism -> {
+                    if (organism.equals("0")) {
+                        organismDomainMap.put(organism, "Other");
+                    } else {
+                        retrieveDomainAndGenusFromNCBI(organism);
+                    }
+                });
     }
 
     private void retrieveDomainAndGenusFromNCBI(String organism) {
-        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(ncbiTaxanomyRestUrl.concat(organism).concat("&retmode=xml")))))) {
+        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(NCBITAXANOMYRESTURL.concat(organism).concat("&retmode=xml")))))) {
             String line;
             String previousLine = "";
             while ((line = rd.readLine()) != null) {
                 //Retrieve Genus
-                if(line.contains("<Rank>genus")){
-                    if(previousLine.contains("<ScientificName>")){
+                if (line.contains("<Rank>genus")) {
+                    if (previousLine.contains("<ScientificName>")) {
                         organismGenusMap.put(organism, getScientificName(previousLine));
                     }
                 }
 
                 //Retrieve Superkingdom
-                if(line.contains("<Rank>superkingdom")){
-                    if(previousLine.contains("<ScientificName>")){
+                if (line.contains("<Rank>superkingdom")) {
+                    if (previousLine.contains("<ScientificName>")) {
                         organismDomainMap.put(organism, getScientificName(previousLine));
                     }
                 }
 
                 //Handle unclassified samples
-                if(line.contains("<Lineage>unclassified sequences</Lineage>")){
+                if (line.contains("<Lineage>unclassified sequences</Lineage>")) {
                     organismDomainMap.put(organism, "unclassified sequences");
                 }
                 previousLine = line.trim();
@@ -160,7 +148,7 @@ public class OrganismCountQuery extends AQuery {
         }
     }
 
-    private String getScientificName(String line){
+    private String getScientificName(String line) {
         //Extract Scientific name with regex
         Pattern p = Pattern.compile("(<ScientificName>)(.*?)(<\\/ScientificName>)");
         Matcher m = p.matcher(line);
@@ -169,33 +157,28 @@ public class OrganismCountQuery extends AQuery {
         return m.group(2);
     }
 
-    private void generateDomainCountMap(){
-        for (String organism : organismDomainMap.keySet()) {
-            Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(organism), organismCountMap.get(organism));
-        }
+    private void generateDomainCountMap() {
+        organismDomainMap.keySet().forEach(organism -> MapUtil.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(organism), organismCountMap.get(organism)));
     }
 
     private void generateGenusCountMap() {
-
         for (String organism : organismGenusMap.keySet()) {
             if (organismDomainMap.get(organism).equals(DOMAIN.Eukaryota.toString())) {
-                Helpers.addEntryToStringCountMap(eukaryotaGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
+                MapUtil.addEntryToStringCountMap(eukaryotaGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
             }
             if (organismDomainMap.get(organism).equals(DOMAIN.Bacteria.toString())) {
-                Helpers.addEntryToStringCountMap(bacteriaGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
+                MapUtil.addEntryToStringCountMap(bacteriaGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
             }
             if (organismDomainMap.get(organism).equals(DOMAIN.Viruses.toString())) {
-                Helpers.addEntryToStringCountMap(virusesGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
+                MapUtil.addEntryToStringCountMap(virusesGenusCountMap, organismGenusMap.get(organism), organismCountMap.get(organism));
             }
         }
     }
 
     private void generateSpeciesCountMap() {
-
         Map<String, String> vocabularyMap = mapTaxonomyIDToName();
 
         for (String organism : organismDomainMap.keySet()) {
-
             if (organismDomainMap.get(organism).equals(DOMAIN.Eukaryota.toString())) {
                 eukaryotaSpeciesCountMap.put(vocabularyMap.get(organism), organismCountMap.get(organism));
             }
@@ -208,7 +191,7 @@ public class OrganismCountQuery extends AQuery {
         }
     }
 
-    private Map<String, String> mapTaxonomyIDToName(){
+    private Map<String, String> mapTaxonomyIDToName() {
         VocabularyTermFetchOptions vocabularyFetchOptions = new VocabularyTermFetchOptions();
         vocabularyFetchOptions.withVocabulary();
 
@@ -217,38 +200,31 @@ public class OrganismCountQuery extends AQuery {
 
         SearchResult<VocabularyTerm> vocabularyTermSearchResult = super.getV3().searchVocabularyTerms(super.getSessionToken(), vocabularyTermSearchCriteria, vocabularyFetchOptions);
 
-        Map<java.lang.String, java.lang.String> vocabularyMap = new HashMap<>();
+        Map<String, String> vocabularyMap = new HashMap<>();
 
-        for (VocabularyTerm v : vocabularyTermSearchResult.getObjects()) {
-            vocabularyMap.put(v.getCode(), v.getLabel());
-        }
+        vocabularyTermSearchResult.getObjects().forEach(vocabularyTerm -> vocabularyMap.put(vocabularyTerm.getCode(), vocabularyTerm.getLabel()));
 
         return vocabularyMap;
     }
 
     //Generate your chart config
     private ChartConfig generateChartConfig(Map<String, Integer> result, String name, String title) {
-
         ChartConfig organismCount = new ChartConfig();
 
         //Add chart settings
         ChartSettings organismCountSettings = new ChartSettings(title);
         //Set xCategories
-        String[] organism = result.keySet().toArray(new String[result.keySet().size()]);
-        Arrays.sort(organism);
-        organismCountSettings.setxCategories(new ArrayList<>(Arrays.asList(organism)));
+        List<String> organism = new ArrayList<>(result.keySet());
+        Collections.sort(organism);
+        organismCountSettings.setxCategories(new ArrayList<>(organism));
 
         //Add settings to chart config
         organismCount.setSettings(organismCountSettings);
 
-
         //Add chart data: be careful with order of data: must match xCategory order
         Map<Object, ArrayList<Object>> count = new HashMap<>();
-        ArrayList<Object> list = new ArrayList<>();
-        for (String s : organism) {
-            list.add(result.get(s));
-        }
-        count.put(name, list);
+
+        count.put(name, new ArrayList<>(organism));
         organismCount.setData(count);
 
         return organismCount;

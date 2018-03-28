@@ -21,7 +21,6 @@ public class MainController {
 
 
     public MainController(InputFileParser inputFileParser){
-
         this.openBisAccess = new OpenBisAccess(inputFileParser.getOpenBisUrl(),
                                                 inputFileParser.getOpenBisUserName(),
                                                 inputFileParser.getOpenBisPassword());

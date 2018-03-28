@@ -26,7 +26,7 @@ public class Main {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("statisitics-data-retrieval-webservice", options);
+            formatter.printHelp("statistics-data-retrieval-webservice", options);
 
             System.exit(1);
             return;
@@ -37,7 +37,7 @@ public class Main {
             mainController.query();
             mainController.writeToFile();
             mainController.logout();
-        }catch(IOException e){
+        } catch (IOException e) {
             System.out.println("File could not be parsed");
             e.printStackTrace();
         }

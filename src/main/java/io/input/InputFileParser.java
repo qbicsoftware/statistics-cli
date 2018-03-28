@@ -13,27 +13,26 @@ public class InputFileParser {
     private String openBisPassword;
     private String outputFilename;
 
-    public InputFileParser(String inputFileName) throws IOException{
+    public InputFileParser(String inputFileName) throws IOException {
         bufferedReader = new BufferedReader(new FileReader(inputFileName));
         parse();
     }
 
-    private void parse() throws IOException{
+    private void parse() throws IOException {
         String line;
 
-        while ( (line = bufferedReader.readLine()) != null)
-        {
+        while ((line = bufferedReader.readLine()) != null) {
             String value = line.split("=")[1].trim();
-            if(line.startsWith("openBisUrl")){
+            if (line.startsWith("openBisUrl")) {
                 openBisUrl = value;
             }
-            if(line.startsWith("openBisUserName")){
+            if (line.startsWith("openBisUserName")) {
                 openBisUserName = value;
             }
-            if(line.startsWith("openBisPassword")){
+            if (line.startsWith("openBisPassword")) {
                 openBisPassword = value;
             }
-            if(line.startsWith("outputFileName")){
+            if (line.startsWith("outputFileName")) {
                 outputFilename = value;
             }
         }

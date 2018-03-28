@@ -13,7 +13,6 @@ public abstract class AQuery {
     AQuery(IApplicationServerApi v3, String sessionToken){
         this.v3 = v3;
         this.sessionToken = sessionToken;
-
     }
 
     IApplicationServerApi getV3() {
