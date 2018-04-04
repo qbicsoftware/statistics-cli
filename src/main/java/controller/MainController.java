@@ -1,6 +1,7 @@
 package controller;
 
 import io.input.InputFileParser;
+import io.queries.AvailablePipelinesQuery;
 import io.webservice.OpenBisAccess;
 import io.queries.AQuery;
 import io.queries.OrganismCountQuery;
@@ -29,6 +30,7 @@ public class MainController {
 
     //Query classes
     private final AQuery organismCountQuery;
+    private final AQuery availablePipelinesQuery;
 
     public MainController(InputFileParser inputFileParser) {
 
@@ -44,6 +46,7 @@ public class MainController {
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        availablePipelinesQuery = new AvailablePipelinesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
 
         logger.info("Start queries");
         query();
@@ -65,6 +68,10 @@ public class MainController {
             logger.info("Run OrganismCounts query");
             Map<String, ChartConfig> organismCounts = organismCountQuery.query();
             organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
+
+            logger.info("Run AvailablePipelines query");
+            availablePipelinesQuery.query();
+
         }catch(Exception e){
             e.printStackTrace();
             logger.info("Queries failed with: " + e.getMessage());

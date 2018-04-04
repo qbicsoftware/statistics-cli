@@ -272,19 +272,19 @@ public class OrganismCountQuery extends AQuery {
         //Add chart settings
         ChartSettings organismCountSettings = new ChartSettings(title);
         //Set xCategories
-        String[] organism = result.keySet().toArray(new String[result.keySet().size()]);
-        //Arrays.sort(organism);
-        organismCountSettings.setxCategories(new ArrayList<>(Arrays.asList(organism)));
+        List<String> organism = new ArrayList<>(result.keySet());
+
+        organismCountSettings.setxCategories(new ArrayList<>(organism));
 
         //Add settings to chart config
         organismCount.setSettings(organismCountSettings);
 
         //Add chart data: be careful with order of data: must match xCategory order
         Map<Object, ArrayList<Object>> count = new HashMap<>();
+
+        //This is necessary to always ensure proper order and mapping of key value pairs in YAML!
         ArrayList<Object> list = new ArrayList<>();
-        for (String s : organism) {
-            list.add(result.get(s));
-        }
+        organism.forEach(o -> list.add(result.get(o)));
         count.put(name, list);
         organismCount.setData(count);
 
