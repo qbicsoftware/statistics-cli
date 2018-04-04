@@ -60,7 +60,7 @@ public class OrganismCountQuery extends AQuery {
     }
 
     @Override
-    public Map<String, ChartConfig> query(){
+    public Map<String, ChartConfig> query() {
 
         logger.info("Run organism count query");
 
@@ -81,9 +81,9 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Retrieve species with a larger share than " + largeThreshold + " in their domain.");
         filterForLargeOrganisms();
 
-        for(String domain : domainCountMap.keySet()){
-            if(! (domain.equals("Other") || domain.equals("unclassified sequences"))
-                    && SuperKingdoms.getList().contains(domain)){ //exclude species with large share, which were added to superkingdom resolution from being further classified
+        for (String domain : domainCountMap.keySet()) {
+            if (!(domain.equals("Other") || domain.equals("unclassified sequences"))
+                    && SuperKingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified
                 logger.info("Create genus and species count map of " + domain);
                 genusCountMaps.put(domain, new HashMap<>());
                 speciesCountMaps.put(domain, new HashMap<>());
@@ -101,11 +101,11 @@ public class OrganismCountQuery extends AQuery {
         result.put("SuperKingdom", generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
 
         //Add Genus maps to config
-        for(String domain : genusCountMaps.keySet()){
+        for (String domain : genusCountMaps.keySet()) {
             result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count".concat(domain)));
         }
         //Add Species to config
-        for(String domain : speciesCountMaps.keySet()){
+        for (String domain : speciesCountMaps.keySet()) {
             result.put(domain.concat("_Species"), generateChartConfig(speciesCountMaps.get(domain), domain, ""));
         }
 
@@ -115,7 +115,7 @@ public class OrganismCountQuery extends AQuery {
         return result;
     }
 
-    private void clearMaps(){
+    private void clearMaps() {
         domainCountMap.clear();
         organismCountMap.clear();
         organismDomainMap.clear();
@@ -141,7 +141,7 @@ public class OrganismCountQuery extends AQuery {
         return sampleSources;
     }
 
-    private void countSamplesPerOrganism(SearchResult<Sample> sampleSources){
+    private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
         //Iterate over all search results
         for (Sample experiment : sampleSources.getObjects()) {
             //If sample does not belong to a blacklisted space, then increment its organism count
@@ -151,7 +151,7 @@ public class OrganismCountQuery extends AQuery {
         }
     }
 
-    private void setOrganismToDomainAndGenusMap(){
+    private void setOrganismToDomainAndGenusMap() {
         for (String organism : organismCountMap.keySet()) {
             if (organism.equals("0")) { //0 = 'Other' in domain and can't be queried to NCBI
                 organismDomainMap.put(organism, "Other");
@@ -161,27 +161,27 @@ public class OrganismCountQuery extends AQuery {
         }
     }
 
-    private void retrieveSuperKingdomAndGenusFromNCBI(String organism){
+    private void retrieveSuperKingdomAndGenusFromNCBI(String organism) {
         try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(ncbiTaxanomyRestUrl.concat(organism).concat("&retmode=xml")))))) {
             String line;
             String scientificName = "";
             while ((line = rd.readLine()) != null) {
                 //Retrieve Genus
-                if(line.contains("<Rank>genus")){
+                if (line.contains("<Rank>genus")) {
                     organismGenusMap.put(organism, getScientificName(scientificName));
                 }
 
                 //Retrieve Superkingdom
-                if(line.contains("<Rank>superkingdom")){
+                if (line.contains("<Rank>superkingdom")) {
                     organismDomainMap.put(organism, getScientificName(scientificName));
                 }
 
                 //Handle unclassified samples
-                if(line.contains("<Lineage>unclassified sequences</Lineage>")){
+                if (line.contains("<Lineage>unclassified sequences</Lineage>")) {
                     organismDomainMap.put(organism, "unclassified sequences");
                 }
 
-                if(line.contains("<ScientificName>")) {
+                if (line.contains("<ScientificName>")) {
                     scientificName = line.trim();
                 }
             }
@@ -190,7 +190,7 @@ public class OrganismCountQuery extends AQuery {
         }
     }
 
-    private String getScientificName(String line){
+    private String getScientificName(String line) {
         //Extract Scientific name with regex
         Pattern p = Pattern.compile("(<ScientificName>)(.*?)(<\\/ScientificName>)");
         Matcher m = p.matcher(line);
@@ -199,29 +199,33 @@ public class OrganismCountQuery extends AQuery {
         return m.group(2);
     }
 
-    private void generateDomainCountMap(){
-        for (String organism : organismDomainMap.keySet()) {
-            Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(organism), organismCountMap.get(organism));
-        }
+    private void generateDomainCountMap() {
+        organismDomainMap.keySet().forEach(o ->
+                Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(o), organismCountMap.get(o)));
+
+//        for (String organism : organismDomainMap.keySet()) {
+//            Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(organism), organismCountMap.get(organism));
+//        }
     }
 
-    private void filterForLargeOrganisms(){
-        for(String organism : organismCountMap.keySet()){
-            double perc =  100.0 * (double)((int)organismCountMap.get(organism)) /(double)((int) domainCountMap.get(organismDomainMap.get(organism)));
-            if(perc > largeThreshold && perc < 100.0){
-                largeSpecies.add(organism);
-                int currCount = (int) domainCountMap.get(organismDomainMap.get(organism));
-                domainCountMap.put(vocabularyMap.get(organism),  organismCountMap.get(organism));
-                domainCountMap.put(organismDomainMap.get(organism), currCount - organismCountMap.get(organism));
+    private void filterForLargeOrganisms() {
+        organismCountMap.keySet().forEach(o -> {
+            double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
+            if (perc > largeThreshold && perc < 100.0) {
+                largeSpecies.add(o);
+                int currCount = (int) domainCountMap.get(organismDomainMap.get(o));
+                domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));
+                domainCountMap.put(organismDomainMap.get(o), currCount - organismCountMap.get(o));
             }
-        }
+
+        });
     }
 
     private void generateGenusCountMap() {
 
         for (String organism : organismGenusMap.keySet()) {
-            if(!largeSpecies.contains(organism)) {
-                if(SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
+            if (!largeSpecies.contains(organism)) {
+                if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
                     Helpers.addEntryToStringCountMap(genusCountMaps.get(organismDomainMap.get(organism)), organismGenusMap.get(organism), organismCountMap.get(organism));
                 }
             }
@@ -232,15 +236,15 @@ public class OrganismCountQuery extends AQuery {
 
         for (String organism : organismDomainMap.keySet()) {
             organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));
-            if(!largeSpecies.contains(organism)) {
-                if(SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
+            if (!largeSpecies.contains(organism)) {
+                if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
                     speciesCountMaps.get(organismDomainMap.get(organism)).put(vocabularyMap.get(organism), organismCountMap.get(organism));
                 }
             }
         }
     }
 
-    private void mapTaxonomyIDToName(){
+    private void mapTaxonomyIDToName() {
         VocabularyTermFetchOptions vocabularyFetchOptions = new VocabularyTermFetchOptions();
         vocabularyFetchOptions.withVocabulary();
 
@@ -258,9 +262,10 @@ public class OrganismCountQuery extends AQuery {
      * Method turns retrieved data to a chart config. can be arbitrarily extended with more parameters. Be careful with adding data.
      * You somehow need to ensure that your data order matches the category order (here xCategories holds the names, data
      * holds the respective values, the need to be in the correct order to allow matching later!)
+     *
      * @param result Map holding categories as key, and the respective values as values
-     * @param name Chart name
-     * @param title Chart title, stored in config and later displayed
+     * @param name   Chart name
+     * @param title  Chart title, stored in config and later displayed
      * @return ChartConfig
      */
     private ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
