@@ -18,7 +18,8 @@ public enum ChartNames {
     Eukaryota_Species("Eukaryota_Species"),
     Bacteria_Species("Bacteria_Species"),
     Viruses_Species("Viruses_Species"),
-    Species_Genus("Species_Genus");
+    Species_Genus("Species_Genus"),
+    GitHub("GitHub");
     //TODO 2: Add your chart names. Sync it with the statistic portlet ChartNames enum.
 
 

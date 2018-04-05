@@ -12,13 +12,16 @@ import java.util.Map;
  */
 public abstract class AQuery {
 
-    private final IApplicationServerApi v3;
-    private final String sessionToken;
+    private IApplicationServerApi v3;
+    private String sessionToken;
 
     AQuery(IApplicationServerApi v3, String sessionToken){
         this.v3 = v3;
         this.sessionToken = sessionToken;
 
+    }
+
+    AQuery(){
     }
 
     IApplicationServerApi getV3() {

@@ -46,7 +46,7 @@ public class MainController {
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
-        availablePipelinesQuery = new AvailablePipelinesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        availablePipelinesQuery = new AvailablePipelinesQuery();
 
         logger.info("Start queries");
         query();
@@ -70,7 +70,8 @@ public class MainController {
             organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
 
             logger.info("Run AvailablePipelines query");
-            availablePipelinesQuery.query();
+            Map<String, ChartConfig> github = availablePipelinesQuery.query();
+            github.keySet().forEach(name -> charts.addCharts(name, github.get(name)));
 
         }catch(Exception e){
             e.printStackTrace();

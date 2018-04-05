@@ -81,14 +81,14 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Retrieve species with a larger share than " + largeThreshold + " in their domain.");
         filterForLargeOrganisms();
 
-        for (String domain : domainCountMap.keySet()) {
+       domainCountMap.keySet().forEach(domain -> {
             if (!(domain.equals("Other") || domain.equals("unclassified sequences"))
                     && SuperKingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified
                 logger.info("Create genus and species count map of " + domain);
                 genusCountMaps.put(domain, new HashMap<>());
                 speciesCountMaps.put(domain, new HashMap<>());
             }
-        }
+        });
 
         generateGenusCountMap();
         generateSpeciesCountMap();
@@ -101,13 +101,11 @@ public class OrganismCountQuery extends AQuery {
         result.put("SuperKingdom", generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
 
         //Add Genus maps to config
-        for (String domain : genusCountMaps.keySet()) {
-            result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count".concat(domain)));
-        }
+       genusCountMaps.keySet().forEach(domain ->
+            result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count".concat(domain))));
         //Add Species to config
-        for (String domain : speciesCountMaps.keySet()) {
-            result.put(domain.concat("_Species"), generateChartConfig(speciesCountMaps.get(domain), domain, ""));
-        }
+        speciesCountMaps.keySet().forEach(domain ->
+            result.put(domain.concat("_Species"), generateChartConfig(speciesCountMaps.get(domain), domain, "")));
 
         //Add species to genus map
         result.put(ChartNames.Species_Genus.toString(), generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), ""));
@@ -143,22 +141,22 @@ public class OrganismCountQuery extends AQuery {
 
     private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
         //Iterate over all search results
-        for (Sample experiment : sampleSources.getObjects()) {
+        sampleSources.getObjects().forEach(experiment ->{
             //If sample does not belong to a blacklisted space, then increment its organism count
             if (!SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
                 Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.get()), 1);
             }
-        }
+        });
     }
 
     private void setOrganismToDomainAndGenusMap() {
-        for (String organism : organismCountMap.keySet()) {
+        organismCountMap.keySet().forEach(organism ->{
             if (organism.equals("0")) { //0 = 'Other' in domain and can't be queried to NCBI
                 organismDomainMap.put(organism, "Other");
             } else {
                 retrieveSuperKingdomAndGenusFromNCBI(organism);
             }
-        }
+        });
     }
 
     private void retrieveSuperKingdomAndGenusFromNCBI(String organism) {
@@ -202,10 +200,6 @@ public class OrganismCountQuery extends AQuery {
     private void generateDomainCountMap() {
         organismDomainMap.keySet().forEach(o ->
                 Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(o), organismCountMap.get(o)));
-
-//        for (String organism : organismDomainMap.keySet()) {
-//            Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(organism), organismCountMap.get(organism));
-//        }
     }
 
     private void filterForLargeOrganisms() {
@@ -223,25 +217,25 @@ public class OrganismCountQuery extends AQuery {
 
     private void generateGenusCountMap() {
 
-        for (String organism : organismGenusMap.keySet()) {
+        organismGenusMap.keySet().forEach(organism -> {
             if (!largeSpecies.contains(organism)) {
                 if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
                     Helpers.addEntryToStringCountMap(genusCountMaps.get(organismDomainMap.get(organism)), organismGenusMap.get(organism), organismCountMap.get(organism));
                 }
             }
-        }
+        });
     }
 
     private void generateSpeciesCountMap() {
 
-        for (String organism : organismDomainMap.keySet()) {
+       organismDomainMap.keySet().forEach(organism -> {
             organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));
             if (!largeSpecies.contains(organism)) {
                 if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
                     speciesCountMaps.get(organismDomainMap.get(organism)).put(vocabularyMap.get(organism), organismCountMap.get(organism));
                 }
             }
-        }
+        });
     }
 
     private void mapTaxonomyIDToName() {
@@ -253,9 +247,9 @@ public class OrganismCountQuery extends AQuery {
 
         SearchResult<VocabularyTerm> vocabularyTermSearchResult = super.getV3().searchVocabularyTerms(super.getSessionToken(), vocabularyTermSearchCriteria, vocabularyFetchOptions);
 
-        for (VocabularyTerm v : vocabularyTermSearchResult.getObjects()) {
-            vocabularyMap.put(v.getCode(), v.getLabel());
-        }
+        vocabularyTermSearchResult.getObjects().forEach(v ->
+            vocabularyMap.put(v.getCode(), v.getLabel())
+        );
     }
 
     /**
