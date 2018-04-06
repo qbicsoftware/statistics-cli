@@ -1,5 +1,7 @@
 package io.queries;
 
+import com.google.gson.*;
+import com.google.gson.internal.LinkedTreeMap;
 import io.queries.utils.lexica.ChartNames;
 import io.webservice.REST;
 import logging.Log4j2Logger;
@@ -12,7 +14,6 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 import model.data.ChartSettings;
-import org.json.*;
 
 /**
  * @author fhanssen
@@ -29,10 +30,12 @@ public class AvailablePipelinesQuery implements IQuery{
     private final String HEADER_KEY = "Accept";
     private final String HEADER_VALUE = "application/vnd.github.mercy-preview+json";
 
-    private final JSONArray workflow;
+    //private final JSONArray workflow;
+    private final List<LinkedTreeMap> workflow;
 
     public AvailablePipelinesQuery() {
-        this.workflow = new JSONArray();
+        //this.workflow = new JSONArray();
+        this.workflow = new ArrayList<>();
     }
 
 
@@ -55,7 +58,7 @@ public class AvailablePipelinesQuery implements IQuery{
 
     private void clear(){
         //Unfortunately no .clear()/.removeAll() method
-        for(int i = 0; i < workflow.length(); i++){
+        for(int i = 0; i < workflow.size(); i++){
             workflow.remove(i);
         }
     }
@@ -84,19 +87,17 @@ public class AvailablePipelinesQuery implements IQuery{
     }
 
     private void retrieveIfWorkflow(String line) {
-        JSONArray temp = new JSONArray(line);
-        temp.forEach(t -> {
-            //Check if the repo has topics and if one of the sopics is 'workflow'
-            if (((JSONObject) t).has("topics")) {
-                JSONArray a = (JSONArray)((JSONObject) t).get("topics");
-                if(a.toString().contains("workflow")) {
-                    //if so, then add to results
-                    workflow.put(t);
+        GsonBuilder builder = new GsonBuilder();
+        Object o = builder.create().fromJson(line, Object.class);
+        for(Object id : ((ArrayList) o)){
+            if(((LinkedTreeMap) id).containsKey("topics")){
 
+                if(((ArrayList)((LinkedTreeMap) id).get("topics")).contains("workflow")){
+                    workflow.add((LinkedTreeMap)id);
                 }
             }
 
-        });
+        }
     }
 
     private ChartConfig generateChartConfig(String title) {
@@ -110,12 +111,12 @@ public class AvailablePipelinesQuery implements IQuery{
 
         //Set xCategories = API URL
         List<String> repos = new ArrayList<>();
-        workflow.forEach(a -> repos.add(Objects.toString(((JSONObject)a).get("url"), "")));
+        workflow.forEach(a -> repos.add(Objects.toString(a.get("url"), "")));
         githubSettings.setxCategories(new ArrayList<>(repos));
 
         //Set yCategories = descriptions
         List<String> descriptions = new ArrayList<>();
-        workflow.forEach(a -> descriptions.add(Objects.toString(((JSONObject) a).get("description"), "")));
+        workflow.forEach(a -> descriptions.add(Objects.toString(a.get("description"), "")));
         githubSettings.setyCategories(new ArrayList<>(descriptions));
 
         //Add settings to chart config
@@ -124,7 +125,7 @@ public class AvailablePipelinesQuery implements IQuery{
         //Add chart data: be careful with order of data: must match category order
         Map<Object, ArrayList<Object>> stars = new HashMap<>();
         ArrayList<Object> starcounts = new ArrayList<>();
-        workflow.forEach(a -> starcounts.add(((JSONObject)a).get("stargazers_count")));
+        workflow.forEach(a -> starcounts.add(a.get("stargazers_count")));
 
         stars.put("stargazers_count", starcounts);
         github.setData(stars);
