@@ -22,7 +22,7 @@ Sync the eponymic classes in the statistics portlet to ensure proper parsing.
 In order to add new data to your file, you essentially only need to a add new  class in the package io.queries and call
 it properly. The steps are highlighted in the code as TODOs:
 
-1. Create a new class in package io.queries, which extends AQuery:
+1. Create a new class in package io.queries, which implements IQuery:
     In this class you should retrieve your data from the source (OpenBis, GitHub, etc.), format it and 
     create the ChartConfig files for all charts working with that data. 
     Example class: OrganismCountQuery

@@ -16,7 +16,7 @@ public enum SuperKingdoms {
     Viroids("Viroids"),
     Viruses("Viruses");
 
-    private static List<String> enumList = Arrays.asList(Stream.of(SuperKingdoms.values()).map(SuperKingdoms::name).toArray(String[]::new));
+    private static final List<String> enumList = Arrays.asList(Stream.of(SuperKingdoms.values()).map(SuperKingdoms::name).toArray(String[]::new));
 
     private final String kingdom;
 

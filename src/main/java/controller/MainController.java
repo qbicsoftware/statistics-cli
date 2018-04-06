@@ -3,7 +3,6 @@ package controller;
 import io.input.InputFileParser;
 import io.queries.AvailablePipelinesQuery;
 import io.webservice.OpenBisAccess;
-import io.queries.AQuery;
 import io.queries.OrganismCountQuery;
 import io.writer.YAMLWriter;
 import logging.Log4j2Logger;
@@ -21,7 +20,7 @@ import java.util.Map;
 
 public class MainController {
 
-    private static Logger logger = new Log4j2Logger(MainController.class);
+    private static final Logger logger = new Log4j2Logger(MainController.class);
 
 
     private final OpenBisAccess openBisAccess;
@@ -29,8 +28,8 @@ public class MainController {
     private final MainConfig charts;
 
     //Query classes
-    private final AQuery organismCountQuery;
-    private final AQuery availablePipelinesQuery;
+    private final OrganismCountQuery organismCountQuery;
+    private final AvailablePipelinesQuery availablePipelinesQuery;
 
     public MainController(InputFileParser inputFileParser) {
 

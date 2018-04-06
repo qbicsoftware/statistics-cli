@@ -32,15 +32,16 @@ import java.util.regex.Pattern;
  * once by genus and once by species. Species, which occupy large parts(> threshold, currently 25%) of a superkingdom,
  * are shown in the superkingdom resolution.
  */
-public class OrganismCountQuery extends AQuery {
+public class OrganismCountQuery implements IQuery {
 
-    private static Logger logger = new Log4j2Logger(OrganismCountQuery.class);
+    private static final Logger logger = new Log4j2Logger(OrganismCountQuery.class);
+    private final String NCBI_TAXONOMY_REST_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
+    private final double THRESHOLD = 25.0; //threshold for when a fraction of species in a kingdom counts as large
 
-
-    private final String ncbiTaxanomyRestUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
+    private final IApplicationServerApi v3;
+    private final String sessionToken;
 
     private final List<String> largeSpecies = new ArrayList<>(); //Species >= largeThreshold share
-    private final double largeThreshold = 25.0;
 
     private final Map<String, String> vocabularyMap = new HashMap<>(); //511145=Escherichia coli strain K12 MG1655 [NCBI ID = Name]
 
@@ -56,10 +57,11 @@ public class OrganismCountQuery extends AQuery {
     private final Map<String, Object> organismNameGenusMap = new HashMap<>(); //Cavia aperea=Cavia [Species name = Genus]
 
     public OrganismCountQuery(IApplicationServerApi v3, String sessionToken) {
-        super(v3, sessionToken);
+
+        this.v3 = v3;
+        this.sessionToken = sessionToken;
     }
 
-    @Override
     public Map<String, ChartConfig> query() {
 
         logger.info("Run organism count query");
@@ -78,7 +80,7 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Count samples on domain basis");
         generateDomainCountMap();
 
-        logger.info("Retrieve species with a larger share than " + largeThreshold + " in their domain.");
+        logger.info("Retrieve species with a larger share than " + THRESHOLD + " in their domain.");
         filterForLargeOrganisms();
 
        domainCountMap.keySet().forEach(domain -> {
@@ -102,7 +104,7 @@ public class OrganismCountQuery extends AQuery {
 
         //Add Genus maps to config
        genusCountMaps.keySet().forEach(domain ->
-            result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count".concat(domain))));
+            result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
             result.put(domain.concat("_Species"), generateChartConfig(speciesCountMaps.get(domain), domain, "")));
@@ -134,9 +136,7 @@ public class OrganismCountQuery extends AQuery {
         fetchOptions.withSpace();
         fetchOptions.withProperties();
 
-        SearchResult<Sample> sampleSources = super.getV3().searchSamples(super.getSessionToken(), sampleSourcesCriteria, fetchOptions);
-
-        return sampleSources;
+        return v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
     }
 
     private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
@@ -160,7 +160,7 @@ public class OrganismCountQuery extends AQuery {
     }
 
     private void retrieveSuperKingdomAndGenusFromNCBI(String organism) {
-        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(ncbiTaxanomyRestUrl.concat(organism).concat("&retmode=xml")))))) {
+        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(NCBI_TAXONOMY_REST_URL.concat(organism).concat("&retmode=xml")))))) {
             String line;
             String scientificName = "";
             while ((line = rd.readLine()) != null) {
@@ -205,7 +205,7 @@ public class OrganismCountQuery extends AQuery {
     private void filterForLargeOrganisms() {
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
-            if (perc > largeThreshold && perc < 100.0) {
+            if (perc > THRESHOLD && perc < 100.0) {
                 largeSpecies.add(o);
                 int currCount = (int) domainCountMap.get(organismDomainMap.get(o));
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));
@@ -245,7 +245,7 @@ public class OrganismCountQuery extends AQuery {
         VocabularyTermSearchCriteria vocabularyTermSearchCriteria = new VocabularyTermSearchCriteria();
         vocabularyTermSearchCriteria.withCode();
 
-        SearchResult<VocabularyTerm> vocabularyTermSearchResult = super.getV3().searchVocabularyTerms(super.getSessionToken(), vocabularyTermSearchCriteria, vocabularyFetchOptions);
+        SearchResult<VocabularyTerm> vocabularyTermSearchResult = v3.searchVocabularyTerms(sessionToken, vocabularyTermSearchCriteria, vocabularyFetchOptions);
 
         vocabularyTermSearchResult.getObjects().forEach(v ->
             vocabularyMap.put(v.getCode(), v.getLabel())

@@ -19,14 +19,13 @@ public enum ChartNames {
     Bacteria_Species("Bacteria_Species"),
     Viruses_Species("Viruses_Species"),
     Species_Genus("Species_Genus"),
-    GitHub("GitHub");
+    Workflow("Workflow");
     //TODO 2: Add your chart names. Sync it with the statistic portlet ChartNames enum.
-
 
 
     private final String chartName;
 
-    private static List<String> enumList = Arrays.asList(Stream.of(ChartNames.values()).map(ChartNames::name).toArray(String[]::new));
+    private static final List<String> enumList = Arrays.asList(Stream.of(ChartNames.values()).map(ChartNames::name).toArray(String[]::new));
 
     ChartNames(String chartName){
         this.chartName = chartName;

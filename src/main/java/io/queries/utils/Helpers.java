@@ -9,7 +9,7 @@ public final class Helpers {
 
     public static void addEntryToStringCountMap(Map map, String key, int count) {
         if (map.containsKey(key)) {
-            int counter = (int) map.get(key);
+            int counter = (int)map.get(key);
             map.put(key, counter + count);
         } else {
             map.put(key, count);

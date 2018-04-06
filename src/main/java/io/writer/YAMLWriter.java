@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public final class YAMLWriter {
 
-    private static Logger logger = new Log4j2Logger(YAMLWriter.class);
+    private static final Logger logger = new Log4j2Logger(YAMLWriter.class);
 
     public static void writeToFile(String outputFile, MainConfig config){
         DumperOptions options = new DumperOptions();

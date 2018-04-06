@@ -13,7 +13,7 @@ import java.io.IOException;
  */
 public class InputFileParser {
 
-    private static Logger logger = new Log4j2Logger(InputFileParser.class);
+    private static final Logger logger = new Log4j2Logger(InputFileParser.class);
 
 
     private final BufferedReader bufferedReader;

@@ -11,7 +11,7 @@ import logging.Logger;
  */
 public class OpenBisAccess {
 
-    private static Logger logger = new Log4j2Logger(OpenBisAccess.class);
+    private static final Logger logger = new Log4j2Logger(OpenBisAccess.class);
 
     private final String URL;
     private final int TIMEOUT = 10000;
