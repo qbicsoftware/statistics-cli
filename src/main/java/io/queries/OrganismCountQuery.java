@@ -63,7 +63,6 @@ public class OrganismCountQuery implements IQuery {
     }
 
     public Map<String, ChartConfig> query() {
-
         logger.info("Run organism count query");
 
         clearMaps();
@@ -125,7 +124,6 @@ public class OrganismCountQuery implements IQuery {
     }
 
     private SearchResult<Sample> retrieveSamplesFromOpenBis() {
-
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
         sampleSourcesCriteria.withSpace();
         sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.get());
@@ -216,7 +214,6 @@ public class OrganismCountQuery implements IQuery {
     }
 
     private void generateGenusCountMap() {
-
         organismGenusMap.keySet().forEach(organism -> {
             if (!largeSpecies.contains(organism)) {
                 if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
@@ -227,7 +224,6 @@ public class OrganismCountQuery implements IQuery {
     }
 
     private void generateSpeciesCountMap() {
-
        organismDomainMap.keySet().forEach(organism -> {
             organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));
             if (!largeSpecies.contains(organism)) {
@@ -263,7 +259,6 @@ public class OrganismCountQuery implements IQuery {
      * @return ChartConfig
      */
     private ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
-
         logger.info("Generate ChartConfig for: " + name);
 
         ChartConfig organismCount = new ChartConfig();

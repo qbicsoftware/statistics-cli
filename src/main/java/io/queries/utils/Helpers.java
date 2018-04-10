@@ -7,6 +7,10 @@ import java.util.Map;
  */
 public final class Helpers {
 
+    private Helpers() {
+        throw new UnsupportedOperationException("Helpers is a utility class, do not create objects of it!");
+    }
+
     public static void addEntryToStringCountMap(Map map, String key, int count) {
         if (map.containsKey(key)) {
             int counter = (int)map.get(key);

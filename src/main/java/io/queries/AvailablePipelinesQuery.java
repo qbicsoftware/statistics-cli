@@ -40,7 +40,6 @@ public class AvailablePipelinesQuery implements IQuery{
 
 
     public Map<String, ChartConfig> query() {
-
         logger.info("Run workflow query");
 
         logger.info("Clear results");
@@ -101,7 +100,6 @@ public class AvailablePipelinesQuery implements IQuery{
     }
 
     private ChartConfig generateChartConfig(String title) {
-
         logger.info("Generate ChartConfig for: " + title);
 
         ChartConfig github = new ChartConfig();

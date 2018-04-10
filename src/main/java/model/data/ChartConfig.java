@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * @author fhanssen
  * This needs to be synced with the ChartConfig class from the statistics tool.
- * Don't delete any Getters or Setters, even if they are shown as unused. SnakeYAMl requieres them.
+ * Don't delete any Getters or Setters, even if they are shown as unused. SnakeYAMl requires them.
  */
 public class ChartConfig {
 

@@ -21,7 +21,6 @@ public class ChartSettings {
         this.title = title;
     }
 
-
     //Getters & Setters: Even if shown as not used, VITAL for YAML parser
 
     public ArrayList<Object> getxCategories() {
