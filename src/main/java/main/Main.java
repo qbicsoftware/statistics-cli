@@ -7,6 +7,8 @@ import logging.Logger;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * @author fhanssen
@@ -16,8 +18,7 @@ public class Main {
     private static Logger logger;
 
     public static void main(String[] args) {
-
-        System.setProperty("log4j.configurationFile","/Users/qbic/Documents/QBiC/statistics-data-retrieval-openbis/src/main/resources/log4j2.xml");
+        System.setProperty("log4j.configurationFile", "log4j2.xml");
         logger = new Log4j2Logger(Main.class);
         //TODO at some point have main only start the program
 
