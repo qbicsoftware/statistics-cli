@@ -12,7 +12,7 @@ public enum SpaceBlackList {
     CHICKEN_FARM,
     MNF_PCT_ARCHIVE;
 
-    private static List<String> enumList = Stream.of(SpaceBlackList.values())
+    private static final List<String> enumList = Stream.of(SpaceBlackList.values())
                         .map(SpaceBlackList::name)
                         .collect(Collectors.toList());
 
