@@ -1,14 +1,11 @@
 package main;
 
 import controller.MainController;
-import io.input.InputFileParser;
+import io.commandline.OpenBisCredentials;
 import logging.Log4j2Logger;
 import logging.Logger;
-import org.apache.commons.cli.*;
+import picocli.CommandLine;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 
 /**
  * @author fhanssen
@@ -22,34 +19,13 @@ public class Main {
         logger = new Log4j2Logger(Main.class);
         //TODO at some point have main only start the program
 
-        Options options = new Options();
-
-        Option propertyFile = new Option("i", "input", true, "Property file path");
-        propertyFile.setRequired(true);
-        options.addOption(propertyFile);
-
-        CommandLineParser parser = new BasicParser();
-        HelpFormatter formatter = new HelpFormatter();
-        CommandLine cmd;
-
         try {
-            cmd = parser.parse(options, args);
-        } catch (ParseException e) {
-            logger.error("Could not parse cmd input: " + e.getMessage());
-            logger.info("statisitics-data-retrieval-webservice" + options);
-            formatter.printHelp("statisitics-data-retrieval-webservice", options);
-
-            System.exit(1);
-            return;
-        }
-
-        try {
-            MainController mainController = new MainController(new InputFileParser(cmd.getOptionValue("input")));
-        }catch(IOException e){
+            OpenBisCredentials openBisCredentials = CommandLine.populateCommand(new OpenBisCredentials(), args);
+            MainController mainController = new MainController(openBisCredentials);
+        } catch (CommandLine.ParameterException e) {
             logger.error("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing." + e.getMessage());
         }
 
     }
-
 
 }

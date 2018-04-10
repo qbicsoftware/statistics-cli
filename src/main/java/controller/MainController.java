@@ -1,6 +1,6 @@
 package controller;
 
-import io.input.InputFileParser;
+import io.commandline.OpenBisCredentials;
 import io.queries.AvailablePipelinesQuery;
 import io.webservice.OpenBisAccess;
 import io.queries.OrganismCountQuery;
@@ -22,7 +22,6 @@ public class MainController {
 
     private static final Logger logger = new Log4j2Logger(MainController.class);
 
-
     private final OpenBisAccess openBisAccess;
     private final String outputFilename;
     private final MainConfig charts;
@@ -31,15 +30,14 @@ public class MainController {
     private final OrganismCountQuery organismCountQuery;
     private final AvailablePipelinesQuery availablePipelinesQuery;
 
-    public MainController(InputFileParser inputFileParser) {
-
+    public MainController(OpenBisCredentials openBisCredentials) {
         logger.info("Establish access to OpenBis");
 
-        this.openBisAccess = new OpenBisAccess(inputFileParser.getOpenBisUrl(),
-                inputFileParser.getOpenBisUserName(),
-                inputFileParser.getOpenBisPassword());
+        this.openBisAccess = new OpenBisAccess(openBisCredentials.getOpenBISUrl(),
+                openBisCredentials.getOpenBISUsername(),
+                openBisCredentials.getOpenBISPassword());
 
-        this.outputFilename = inputFileParser.getOutputFilename();
+        this.outputFilename = openBisCredentials.getOutputFileName();
 
         this.charts = new MainConfig();
 
@@ -62,7 +60,6 @@ public class MainController {
      * ChartConfigs need to be added to the MainConfig charts.
      */
     private void query() {
-
         try {
             logger.info("Run OrganismCounts query");
             Map<String, ChartConfig> organismCounts = organismCountQuery.query();
