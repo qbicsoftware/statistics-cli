@@ -2,9 +2,9 @@ package io.writer;
 
 import logging.Log4j2Logger;
 import logging.Logger;
-import model.data.MainConfig;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import submodule.data.MainConfig;
 
 import java.io.FileWriter;
 import java.io.IOException;

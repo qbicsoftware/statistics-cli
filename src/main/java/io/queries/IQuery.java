@@ -1,6 +1,6 @@
 package io.queries;
 
-import model.data.ChartConfig;
+import submodule.data.ChartConfig;
 
 import java.util.Map;
 

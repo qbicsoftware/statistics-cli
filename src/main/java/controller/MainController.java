@@ -7,8 +7,8 @@ import io.queries.OrganismCountQuery;
 import io.writer.YAMLWriter;
 import logging.Log4j2Logger;
 import logging.Logger;
-import model.data.ChartConfig;
-import model.data.MainConfig;
+import submodule.data.ChartConfig;
+import submodule.data.MainConfig;
 
 import java.util.Map;
 
