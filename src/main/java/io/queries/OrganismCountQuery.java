@@ -9,15 +9,15 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
 import io.queries.utils.Helpers;
-import io.queries.utils.lexica.ChartNames;
 import io.queries.utils.lexica.OpenBisTerminology;
 import io.queries.utils.lexica.SpaceBlackList;
-import io.queries.utils.lexica.SuperKingdoms;
 import io.webservice.REST;
 import logging.Log4j2Logger;
 import logging.Logger;
-import model.data.ChartConfig;
-import model.data.ChartSettings;
+import submodule.data.ChartConfig;
+import submodule.data.ChartSettings;
+import submodule.lexica.ChartNames;
+import submodule.lexica.Kingdoms;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -85,7 +85,7 @@ public class OrganismCountQuery implements IQuery {
 
        domainCountMap.keySet().forEach(domain -> {
             if (!(domain.equals("Other") || domain.equals("unclassified sequences"))
-                    && SuperKingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified
+                    && Kingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified
                 logger.info("Create genus and species count map of " + domain);
                 genusCountMaps.put(domain, new HashMap<>());
                 speciesCountMaps.put(domain, new HashMap<>());
@@ -219,7 +219,7 @@ public class OrganismCountQuery implements IQuery {
 
         organismGenusMap.keySet().forEach(organism -> {
             if (!largeSpecies.contains(organism)) {
-                if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
+                if (Kingdoms.getList().contains(organismDomainMap.get(organism))) {
                     Helpers.addEntryToStringCountMap(genusCountMaps.get(organismDomainMap.get(organism)), organismGenusMap.get(organism), organismCountMap.get(organism));
                 }
             }
@@ -231,7 +231,7 @@ public class OrganismCountQuery implements IQuery {
        organismDomainMap.keySet().forEach(organism -> {
             organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));
             if (!largeSpecies.contains(organism)) {
-                if (SuperKingdoms.getList().contains(organismDomainMap.get(organism))) {
+                if (Kingdoms.getList().contains(organismDomainMap.get(organism))) {
                     speciesCountMaps.get(organismDomainMap.get(organism)).put(vocabularyMap.get(organism), organismCountMap.get(organism));
                 }
             }
@@ -269,7 +269,8 @@ public class OrganismCountQuery implements IQuery {
         ChartConfig organismCount = new ChartConfig();
 
         //Add chart settings
-        ChartSettings organismCountSettings = new ChartSettings(title);
+        ChartSettings organismCountSettings = new ChartSettings();
+        organismCountSettings.setTitle(title);
         //Set xCategories
         List<String> organism = new ArrayList<>(result.keySet());
 

@@ -2,18 +2,18 @@ package io.queries;
 
 import com.google.gson.*;
 import com.google.gson.internal.LinkedTreeMap;
-import io.queries.utils.lexica.ChartNames;
 import io.webservice.REST;
 import logging.Log4j2Logger;
 import logging.Logger;
-import model.data.ChartConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
-import model.data.ChartSettings;
+import submodule.data.ChartConfig;
+import submodule.data.ChartSettings;
+import submodule.lexica.ChartNames;
 
 /**
  * @author fhanssen
@@ -107,7 +107,8 @@ public class AvailablePipelinesQuery implements IQuery{
         ChartConfig github = new ChartConfig();
 
         //Chart settings with title
-        ChartSettings githubSettings = new ChartSettings(title);
+        ChartSettings githubSettings = new ChartSettings();
+        githubSettings.setTitle(title);
 
         //Set xCategories = API URL
         List<String> repos = new ArrayList<>();
