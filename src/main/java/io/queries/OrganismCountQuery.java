@@ -269,7 +269,8 @@ public class OrganismCountQuery implements IQuery {
         ChartConfig organismCount = new ChartConfig();
 
         //Add chart settings
-        ChartSettings organismCountSettings = new ChartSettings(title);
+        ChartSettings organismCountSettings = new ChartSettings();
+        organismCountSettings.setTitle(title);
         //Set xCategories
         List<String> organism = new ArrayList<>(result.keySet());
 

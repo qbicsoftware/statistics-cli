@@ -107,7 +107,8 @@ public class AvailablePipelinesQuery implements IQuery{
         ChartConfig github = new ChartConfig();
 
         //Chart settings with title
-        ChartSettings githubSettings = new ChartSettings(title);
+        ChartSettings githubSettings = new ChartSettings();
+        githubSettings.setTitle(title);
 
         //Set xCategories = API URL
         List<String> repos = new ArrayList<>();
