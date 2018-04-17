@@ -14,6 +14,6 @@ public interface IQuery {
 
     Map<String, ChartConfig> query();
 
-    //TODO 1: extend this class to your own query class (see OrganismCountPresenter for an example)
+    //TODO 1: implement this class to your own query class (see OrganismCountPresenter for an example)
 
 }

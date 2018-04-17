@@ -6,7 +6,9 @@ package io.queries.utils.lexica;
  */
 public enum OpenBisTerminology {
     NCBI_ORGANISM("Q_NCBI_ORGANISM"),
-    BIO_ENTITY("Q_BIOLOGICAL_ENTITY");
+    BIO_ENTITY("Q_BIOLOGICAL_ENTITY"),
+    TEST_SAMPLE("Q_TEST_SAMPLE"),
+    SAMPLE_TYPE("Q_SAMPLE_TYPE");
 
     private final String term;
 
@@ -14,7 +16,8 @@ public enum OpenBisTerminology {
         this.term = term;
     }
 
-    public String get() {
+    @Override
+    public String toString() {
         return term;
     }
 }

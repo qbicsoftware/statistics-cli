@@ -35,6 +35,8 @@ import java.util.regex.Pattern;
 public class OrganismCountQuery implements IQuery {
 
     private static final Logger logger = new Log4j2Logger(OrganismCountQuery.class);
+
+    //TODO this should go into a config
     private final String NCBI_TAXONOMY_REST_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
     private final double THRESHOLD = 25.0; //threshold for when a fraction of species in a kingdom counts as large
 
@@ -83,7 +85,7 @@ public class OrganismCountQuery implements IQuery {
         logger.info("Retrieve species with a larger share than " + THRESHOLD + " in their domain.");
         filterForLargeOrganisms();
 
-       domainCountMap.keySet().forEach(domain -> {
+        domainCountMap.keySet().forEach(domain -> {
             if (!(domain.equals("Other") || domain.equals("unclassified sequences"))
                     && Kingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified
                 logger.info("Create genus and species count map of " + domain);
@@ -100,17 +102,17 @@ public class OrganismCountQuery implements IQuery {
         logger.info("Set results.");
 
         //Add Superkingdom to config
-        result.put("SuperKingdom", generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
+        result.put("SuperKingdom", Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
 
         //Add Genus maps to config
-       genusCountMaps.keySet().forEach(domain ->
-            result.put(domain.concat("_Genus"), generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain))));
+        genusCountMaps.keySet().forEach(domain ->
+                result.put(domain.concat("_Genus"), Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
-            result.put(domain.concat("_Species"), generateChartConfig(speciesCountMaps.get(domain), domain, "")));
+                result.put(domain.concat("_Species"), Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "")));
 
         //Add species to genus map
-        result.put(ChartNames.Species_Genus.toString(), generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), ""));
+        result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), ""));
 
         return result;
     }
@@ -128,7 +130,7 @@ public class OrganismCountQuery implements IQuery {
 
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
         sampleSourcesCriteria.withSpace();
-        sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.get());
+        sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.toString());
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withType();
@@ -141,16 +143,16 @@ public class OrganismCountQuery implements IQuery {
 
     private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
         //Iterate over all search results
-        sampleSources.getObjects().forEach(experiment ->{
+        sampleSources.getObjects().forEach(experiment -> {
             //If sample does not belong to a blacklisted space, then increment its organism count
             if (!SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
-                Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.get()), 1);
+                Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1);
             }
         });
     }
 
     private void setOrganismToDomainAndGenusMap() {
-        organismCountMap.keySet().forEach(organism ->{
+        organismCountMap.keySet().forEach(organism -> {
             if (organism.equals("0")) { //0 = 'Other' in domain and can't be queried to NCBI
                 organismDomainMap.put(organism, "Other");
             } else {
@@ -228,7 +230,7 @@ public class OrganismCountQuery implements IQuery {
 
     private void generateSpeciesCountMap() {
 
-       organismDomainMap.keySet().forEach(organism -> {
+        organismDomainMap.keySet().forEach(organism -> {
             organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));
             if (!largeSpecies.contains(organism)) {
                 if (Kingdoms.getList().contains(organismDomainMap.get(organism))) {
@@ -248,48 +250,11 @@ public class OrganismCountQuery implements IQuery {
         SearchResult<VocabularyTerm> vocabularyTermSearchResult = v3.searchVocabularyTerms(sessionToken, vocabularyTermSearchCriteria, vocabularyFetchOptions);
 
         vocabularyTermSearchResult.getObjects().forEach(v ->
-            vocabularyMap.put(v.getCode(), v.getLabel())
+                vocabularyMap.put(v.getCode(), v.getLabel())
         );
     }
 
-    /**
-     * Method turns retrieved data to a chart config. can be arbitrarily extended with more parameters. Be careful with adding data.
-     * You somehow need to ensure that your data order matches the category order (here xCategories holds the names, data
-     * holds the respective values, the need to be in the correct order to allow matching later!)
-     *
-     * @param result Map holding categories as key, and the respective values as values
-     * @param name   Chart name
-     * @param title  Chart title, stored in config and later displayed
-     * @return ChartConfig
-     */
-    private ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
 
-        logger.info("Generate ChartConfig for: " + name);
-
-        ChartConfig organismCount = new ChartConfig();
-
-        //Add chart settings
-        ChartSettings organismCountSettings = new ChartSettings();
-        organismCountSettings.setTitle(title);
-        //Set xCategories
-        List<String> organism = new ArrayList<>(result.keySet());
-
-        organismCountSettings.setxCategories(new ArrayList<>(organism));
-
-        //Add settings to chart config
-        organismCount.setSettings(organismCountSettings);
-
-        //Add chart data: be careful with order of data: must match xCategory order
-        Map<Object, ArrayList<Object>> count = new HashMap<>();
-
-        //This is necessary to always ensure proper order and mapping of key value pairs in YAML!
-        ArrayList<Object> list = new ArrayList<>();
-        organism.forEach(o -> list.add(result.get(o)));
-        count.put(name, list);
-        organismCount.setData(count);
-
-        return organismCount;
-    }
 
 }
 

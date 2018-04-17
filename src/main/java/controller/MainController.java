@@ -2,6 +2,8 @@ package controller;
 
 import io.commandline.OpenBisCredentials;
 import io.queries.AvailablePipelinesQuery;
+import io.queries.ProjectsTechnologiesQuery;
+import io.queries.SampleTypeQuery;
 import io.webservice.OpenBisAccess;
 import io.queries.OrganismCountQuery;
 import io.writer.YAMLWriter;
@@ -29,6 +31,8 @@ public class MainController {
     //Query classes
     private final OrganismCountQuery organismCountQuery;
     private final AvailablePipelinesQuery availablePipelinesQuery;
+    private final ProjectsTechnologiesQuery projectsTechnologiesQuery;
+    private final SampleTypeQuery sampleTypeQuery;
 
     public MainController(OpenBisCredentials openBisCredentials) {
         logger.info("Establish access to OpenBis");
@@ -43,7 +47,9 @@ public class MainController {
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
-        availablePipelinesQuery = new AvailablePipelinesQuery();
+        availablePipelinesQuery = new AvailablePipelinesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        projectsTechnologiesQuery = new ProjectsTechnologiesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        sampleTypeQuery = new SampleTypeQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
 
         logger.info("Start queries");
         query();
@@ -62,12 +68,20 @@ public class MainController {
     private void query() {
         try {
             logger.info("Run OrganismCounts query");
-            Map<String, ChartConfig> organismCounts = organismCountQuery.query();
-            organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
+            //Map<String, ChartConfig> organismCounts = organismCountQuery.query();
+            //organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
 
             logger.info("Run AvailablePipelines query");
             Map<String, ChartConfig> github = availablePipelinesQuery.query();
             github.keySet().forEach(name -> charts.addCharts(name, github.get(name)));
+
+            logger.info("Run ProjectTech query");
+            Map<String, ChartConfig> projectsTechnology = projectsTechnologiesQuery.query();
+            projectsTechnology.keySet().forEach(name -> charts.addCharts(name, projectsTechnology.get(name)));
+
+            logger.info("Run SampleType query");
+            Map<String, ChartConfig> sampleMap = sampleTypeQuery.query();
+            sampleMap.keySet().forEach(name -> charts.addCharts(name, sampleMap.get(name)));
 
         }catch(Exception e){
             e.printStackTrace();

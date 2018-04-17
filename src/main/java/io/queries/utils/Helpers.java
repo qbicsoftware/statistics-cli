@@ -1,11 +1,22 @@
 package io.queries.utils;
 
+import logging.Log4j2Logger;
+import logging.Logger;
+import submodule.data.ChartConfig;
+import submodule.data.ChartSettings;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 /**
  * @author fhanssen
  * This static class holds useful helper methods, that have to be reused for multiple queries.
  */
 public final class Helpers {
+
+    private static final Logger logger = new Log4j2Logger(Helpers.class);
+
 
     public static void addEntryToStringCountMap(Map map, String key, int count) {
         if (map.containsKey(key)) {
@@ -15,4 +26,59 @@ public final class Helpers {
             map.put(key, count);
         }
     }
+
+    public static void addEntryToStringListMap(Map map, String key, Object listElement) {
+
+        if (map.containsKey(key)) {
+            List l = (List)map.get(key);
+            l.add( listElement);
+            map.put(key, l);
+        } else {
+            List l = new ArrayList();
+            l.add(listElement);
+            map.put(key, l);
+        }
+    }
+
+    /**
+     * Method turns retrieved data to a chart config. can be arbitrarily extended with more parameters. Be careful with adding data.
+     * You somehow need to ensure that your data order matches the category order (here xCategories holds the names, data
+     * holds the respective values, the need to be in the correct order to allow matching later!)
+     *
+     * Most common: xcategories and data: so this is used here, anytng else has to be added to the returned chartconfig
+     * @param result Map holding categories as key, and the respective values as values
+     * @param name
+     * @param title  Chart title, stored in config and later displayed
+     * @return ChartConfig
+     */
+    public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
+
+        logger.info("Generate ChartConfig for: " + title);
+
+        ChartConfig chartConfig = new ChartConfig();
+
+        //Add chart settings
+        ChartSettings chartSettings = new ChartSettings();
+        chartSettings.setTitle(title);
+        //Set xCategories
+        List<String> xCategories = new ArrayList<>(result.keySet());
+
+        chartSettings.setxCategories(new ArrayList<>(xCategories));
+
+        //Add settings to chart config
+        chartConfig.setSettings(chartSettings);
+
+        //Add chart data: be careful with order of data: must match xCategory order
+        Map<Object, ArrayList<Object>> count = new HashMap<>();
+
+        //This is necessary to always ensure proper order and mapping of key value pairs in YAML!
+        ArrayList<Object> list = new ArrayList<>();
+        xCategories.forEach(o -> list.add(result.get(o)));
+        count.put(name, list);
+        chartConfig.setData(count);
+
+        return chartConfig;
+    }
+
+
 }
