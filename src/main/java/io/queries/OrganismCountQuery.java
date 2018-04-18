@@ -15,7 +15,6 @@ import io.webservice.REST;
 import logging.Log4j2Logger;
 import logging.Logger;
 import submodule.data.ChartConfig;
-import submodule.data.ChartSettings;
 import submodule.lexica.ChartNames;
 import submodule.lexica.Kingdoms;
 
@@ -32,7 +31,7 @@ import java.util.regex.Pattern;
  * once by genus and once by species. Species, which occupy large parts(> threshold, currently 25%) of a superkingdom,
  * are shown in the superkingdom resolution.
  */
-public class OrganismCountQuery implements IQuery {
+public class OrganismCountQuery extends AQuery {
 
     private static final Logger logger = new Log4j2Logger(OrganismCountQuery.class);
 

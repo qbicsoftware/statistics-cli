@@ -9,11 +9,12 @@ import java.util.Map;
  * All query classes need to to implement this abstract class, in order to ensure they have all expected methods.
  * The abstracte class holds the needed openbis credentials.
  */
-public interface IQuery {
+public abstract class AQuery{
 
-
-    Map<String, ChartConfig> query();
+    //TODO maybe add opebis credentials ere again since everyone is using them
+    abstract public  Map<String, ChartConfig> query();
 
     //TODO 1: implement this class to your own query class (see OrganismCountPresenter for an example)
+
 
 }

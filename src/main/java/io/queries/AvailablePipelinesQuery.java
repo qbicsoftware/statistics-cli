@@ -27,7 +27,7 @@ import submodule.lexica.ChartNames;
  * Their information is retrieved and only the decription(yCategories) and stargazer count(date) is stored in the config
  */
 
-public class AvailablePipelinesQuery implements IQuery {
+public class AvailablePipelinesQuery extends AQuery {
 
     //TODO Waiting for Feedback from PMs
 
@@ -64,22 +64,21 @@ public class AvailablePipelinesQuery implements IQuery {
         logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         computeWorkflowExecutionCounts();
 
-        logger.info("Get available QBiC workflows from GitHub via API and sort them by type");
+        logger.info("Get available QBiC workflows from GitHub via API");
         //Sort all workflows by type
-        //workflowTypeCountResult.keySet().forEach(type -> getAvailableWorkflows(type.toLowerCase()));
-        //Add any workflows with no type
-        //getAvailableWorkflows("other");
+
         getAvailableWorkflows();
-        workflowTypeCountResult.keySet().forEach(type -> sortAvailableWorkflowsByType(type));
+
+        logger.info("Sort workflows by type");
+        workflowTypeCountResult.keySet().forEach(type -> {
+            sortAvailableWorkflowsByType(type.toLowerCase());
+        });
+        //Add this LAST!
         sortAvailableWorkflowsByType("other");
+
         logger.info("Set results");
         workflows.keySet().forEach(type ->
                 result.put(ChartNames.Available_Workflows_.toString().concat(type.toUpperCase()), customizeChartConfig(workflows.get(type), type.toUpperCase())));
-        if (workflows.containsKey("other")) {
-            result.put(ChartNames.Available_Workflows_.toString().concat("other"), customizeChartConfig(workflows.get("other"), "Other"));
-        } else {
-            result.put(ChartNames.Available_Workflows_.toString().concat("other"), new ChartConfig());
-        }
 
         result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow execution ratio"));
 
@@ -152,11 +151,14 @@ public class AvailablePipelinesQuery implements IQuery {
     }
 
     private void sortAvailableWorkflowsByType(String type) {
+        List<LinkedTreeMap> removables = new ArrayList<>();
         allGithubWorkflows.forEach(id -> {
-            if (((ArrayList) id.get("topics")).contains(type)) {
+            if (((ArrayList) id.get("topics")).contains(type) || type.equals("other")) {
                 Helpers.addEntryToStringListMap(workflows, type, (LinkedTreeMap)id);
+                removables.add(id);
             }
         });
+        allGithubWorkflows.removeAll(removables);
     }
 
     private void computeWorkflowExecutionCounts() {

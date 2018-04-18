@@ -15,7 +15,7 @@ import submodule.lexica.ChartNames;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SampleTypeQuery implements IQuery {
+public class SampleTypeQuery extends AQuery {
 
     private static final Logger logger = new Log4j2Logger(SampleTypeQuery.class);
 

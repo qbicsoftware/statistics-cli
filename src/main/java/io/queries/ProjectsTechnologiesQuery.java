@@ -14,7 +14,7 @@ import submodule.lexica.ChartNames;
 
 import java.util.*;
 
-public class ProjectsTechnologiesQuery implements IQuery {
+public class ProjectsTechnologiesQuery  extends AQuery {
 
     private static final Logger logger = new Log4j2Logger(ProjectsTechnologiesQuery.class);
 
