@@ -48,18 +48,18 @@ public final class Helpers {
      * Most common: xcategories and data: so this is used here, anytng else has to be added to the returned chartconfig
      * @param result Map holding categories as key, and the respective values as values
      * @param name
-     * @param title  Chart title, stored in config and later displayed
+     * @param chartTitle  Chart title, stored in config and later displayed
      * @return ChartConfig
      */
-    public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String title) {
+    public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String chartTitle) {
 
-        logger.info("Generate ChartConfig for: " + title);
+        logger.info("Generate ChartConfig for: " + name + " " + chartTitle);
 
         ChartConfig chartConfig = new ChartConfig();
 
         //Add chart settings
         ChartSettings chartSettings = new ChartSettings();
-        chartSettings.setTitle(title);
+        chartSettings.setTitle(chartTitle);
         //Set xCategories
         List<String> xCategories = new ArrayList<>(result.keySet());
 

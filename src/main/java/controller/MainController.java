@@ -68,8 +68,8 @@ public class MainController {
     private void query() {
         try {
             logger.info("Run OrganismCounts query");
-            //Map<String, ChartConfig> organismCounts = organismCountQuery.query();
-            //organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
+            Map<String, ChartConfig> organismCounts = organismCountQuery.query();
+            organismCounts.keySet().forEach(name -> charts.addCharts(name, organismCounts.get(name)));
 
             logger.info("Run AvailablePipelines query");
             Map<String, ChartConfig> github = availablePipelinesQuery.query();

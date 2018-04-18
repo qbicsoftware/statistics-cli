@@ -9,7 +9,6 @@ import com.google.gson.*;
 import com.google.gson.internal.LinkedTreeMap;
 import io.queries.utils.Helpers;
 import io.webservice.REST;
-import javafx.scene.chart.Chart;
 import logging.Log4j2Logger;
 import logging.Logger;
 
@@ -19,8 +18,8 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 import submodule.data.ChartConfig;
-import submodule.data.ChartSettings;
 import submodule.lexica.ChartNames;
+
 
 /**
  * @author fhanssen
@@ -42,6 +41,8 @@ public class AvailablePipelinesQuery implements IQuery {
     private final IApplicationServerApi v3;
     private final String sessionToken;
 
+    private final List<LinkedTreeMap> allGithubWorkflows = new ArrayList<>();
+
     private final Map<String, List<LinkedTreeMap>> workflows = new HashMap<>();
 
     private final Map<String, ChartConfig> result = new HashMap<>();
@@ -60,16 +61,28 @@ public class AvailablePipelinesQuery implements IQuery {
         logger.info("Clear results");
         clear();
 
+        logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         computeWorkflowExecutionCounts();
 
-        logger.info("Get available QBiC workflows from GitHub via API");
-        //Exceeded query num
-        workflowTypeCountResult.keySet().forEach(type -> getAvailableWorkflows(type.toLowerCase()));
-
+        logger.info("Get available QBiC workflows from GitHub via API and sort them by type");
+        //Sort all workflows by type
+        //workflowTypeCountResult.keySet().forEach(type -> getAvailableWorkflows(type.toLowerCase()));
+        //Add any workflows with no type
+        //getAvailableWorkflows("other");
+        getAvailableWorkflows();
+        workflowTypeCountResult.keySet().forEach(type -> sortAvailableWorkflowsByType(type));
+        sortAvailableWorkflowsByType("other");
         logger.info("Set results");
         workflows.keySet().forEach(type ->
-            result.put(type, customizeChartConfig(workflows.get(type))));
-        result.put("Workflow counts", Helpers.generateChartConfig(workflowTypeCountResult, "wf counts", "wf counts"));
+                result.put(ChartNames.Available_Workflows_.toString().concat(type.toUpperCase()), customizeChartConfig(workflows.get(type), type.toUpperCase())));
+        if (workflows.containsKey("other")) {
+            result.put(ChartNames.Available_Workflows_.toString().concat("other"), customizeChartConfig(workflows.get("other"), "Other"));
+        } else {
+            result.put(ChartNames.Available_Workflows_.toString().concat("other"), new ChartConfig());
+        }
+
+        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow execution ratio"));
+
         return result;
     }
 
@@ -80,11 +93,11 @@ public class AvailablePipelinesQuery implements IQuery {
     }
 
     //call this for each workflow and name it after its type
-    private ChartConfig customizeChartConfig(List<LinkedTreeMap> list) {
-        Map<String, Object> map = new HashMap<>();
-        list.forEach(a -> map.put(Objects.toString(a.get("url"), ""), a.get("stargazers_count")));
+    private ChartConfig customizeChartConfig(List<LinkedTreeMap> list, String title) {
+        Map<String, Object> resultMap = new HashMap<>();
+        list.forEach(a -> resultMap.put(Objects.toString(a.get("url"), ""), a.get("stargazers_count")));
 
-        ChartConfig chartConfig = Helpers.generateChartConfig(map, "stargazers_count","Available Workflows");
+        ChartConfig chartConfig = Helpers.generateChartConfig(resultMap, "stargazers_count", "Available Workflows ".concat(title));
 
         List<String> descriptions = new ArrayList<>();
         list.forEach(a -> descriptions.add(Objects.toString(a.get("description"), "")));
@@ -93,7 +106,7 @@ public class AvailablePipelinesQuery implements IQuery {
         return chartConfig;
     }
 
-    private void getAvailableWorkflows(String type) {
+    private void getAvailableWorkflows() {
         int page_counter = 1; //GitHub API does not support pagination right now, 100 results can be displayed at once
         // at most, so we have to access all pages by hand
 
@@ -106,7 +119,7 @@ public class AvailablePipelinesQuery implements IQuery {
                             HEADER_VALUE)))) {
 
                 while ((line = rd.readLine()) != null && !"[]".equals(line)) {
-                    retrieveIfWorkflow(line, type);
+                    retrieveIfWorkflow(line);
                 }
 
             } catch (IOException e) {
@@ -116,23 +129,33 @@ public class AvailablePipelinesQuery implements IQuery {
             //Access next 100 results
             page_counter++;
 
-            if(page_counter > 5){
+            //TODO find some sort of safety net here
+            if (page_counter > 5) {
                 System.out.println("GIT CALL ERROR");
                 break;
             }
         }
     }
 
-    private void retrieveIfWorkflow(String line, String type) {
+    private void retrieveIfWorkflow(String line) {
         GsonBuilder builder = new GsonBuilder();
         Object o = builder.create().fromJson(line, Object.class);
         ((ArrayList) o).forEach(id -> {
             if (((LinkedTreeMap) id).containsKey("topics")) {
-                if (((ArrayList) ((LinkedTreeMap) id).get("topics")).contains("workflow") && ((ArrayList) ((LinkedTreeMap) id).get("topics")).contains(type)) {
-                    Helpers.addEntryToStringListMap(workflows,type, (LinkedTreeMap)id);
+                if (((ArrayList) ((LinkedTreeMap) id).get("topics")).contains("workflow")) {//&& ((ArrayList) ((LinkedTreeMap) id).get("topics")).contains(type)) {
+                    //Helpers.addEntryToStringListMap(workflows, type, (LinkedTreeMap)id);
+                    allGithubWorkflows.add((LinkedTreeMap) id);
                 }
             }
 
+        });
+    }
+
+    private void sortAvailableWorkflowsByType(String type) {
+        allGithubWorkflows.forEach(id -> {
+            if (((ArrayList) id.get("topics")).contains(type)) {
+                Helpers.addEntryToStringListMap(workflows, type, (LinkedTreeMap)id);
+            }
         });
     }
 
