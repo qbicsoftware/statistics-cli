@@ -2,11 +2,11 @@ package io.queries;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.Space;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.fetchoptions.SpaceFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.search.SpaceSearchCriteria;
 import io.queries.utils.Helpers;
-import io.queries.utils.lexica.OpenBisTerminology;
+import io.queries.utils.lexica.SpaceBlackList;
 import logging.Log4j2Logger;
 import logging.Logger;
 import submodule.data.ChartConfig;
@@ -14,7 +14,10 @@ import submodule.lexica.ChartNames;
 
 import java.util.*;
 
-public class ProjectsTechnologiesQuery  extends AQuery {
+/**
+ * @author fhanssen
+ */
+public class ProjectsTechnologiesQuery extends AQuery {
 
     private static final Logger logger = new Log4j2Logger(ProjectsTechnologiesQuery.class);
 
@@ -22,6 +25,8 @@ public class ProjectsTechnologiesQuery  extends AQuery {
 
     private final IApplicationServerApi v3;
     private final String sessionToken;
+
+    private  SearchResult<Space> searchResult;
 
     private final Map<String, Object> results = new HashMap<>();
 
@@ -37,35 +42,74 @@ public class ProjectsTechnologiesQuery  extends AQuery {
         logger.info("Run projects-by-technologies query");
 
         clear();
+
+        retrieveSamplesFromOpenBis();
+        removeBlacklistedSpaces();
+
         countProjectsByTechnolgy();
         removeMinorities();
 
         Map<String, ChartConfig> map = new HashMap<>();
-        map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(results, "ProjectsTechnolgy","Projectcounts by Technologies"));
+        map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(results, "counts", "Project Counts"));
+        System.out.println(results.toString());
 
         return map;
     }
 
+    private void clear() {
+        results.clear();
+    }
+
+    private void retrieveSamplesFromOpenBis() {
+
+        //TODO this spits out a result verifiable with the testing version: check with chris
+        SpaceSearchCriteria c  = new SpaceSearchCriteria();
+        c.withCode();
+
+        SpaceFetchOptions s = new SpaceFetchOptions();
+        s.withSamples().withChildren().withType();
+
+
+        searchResult = v3.searchSpaces(sessionToken, c, s);
+
+    }
+
+    @Override
+    void removeBlacklistedSpaces() {
+
+        List<Space> removables = new ArrayList<>();
+        searchResult.getObjects().forEach(space -> {
+            if (SpaceBlackList.getList().contains(space.getCode())) {
+                removables.add(space);
+            }
+        });
+        searchResult.getObjects().removeAll(removables);
+
+        logger.info("Removed results from blacklisted OpenBis Spaces: " + SpaceBlackList.getList().toString());
+
+    }
+
     private void countProjectsByTechnolgy() {
-        retrieveSamplesFromOpenBis().getObjects().forEach(sample ->{
+        searchResult.getObjects().forEach(space -> {
+            space.getSamples().forEach(sample -> {
+                sample.getChildren().forEach(omicsChild -> {
 
-            sample.getChildren().forEach(omicsChild -> {
+                    if (isOmicsRun(omicsChild.getType().toString())) {
+                        Helpers.addEntryToStringCountMap(results, getOmicsName(omicsChild.getType().toString()), 1);
+                    }
 
-                if(isOmicsRun(omicsChild.getType().toString())) {
-                    Helpers.addEntryToStringCountMap(results, getOmicsName(omicsChild.getType().toString()), 1);
-                }
-
+                });
             });
         });
     }
 
-    private boolean isOmicsRun(String name){
+    private boolean isOmicsRun(String name) {
         String[] array = name.split("_");
-        return array[array.length-1].equals("RUN") && !array[1].equals("WF");
+        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
     }
 
-    private String getOmicsName(String name){
-        return  name.split("_")[1];
+    private String getOmicsName(String name) {
+        return name.split("_")[1];
     }
 
 
@@ -76,7 +120,7 @@ public class ProjectsTechnologiesQuery  extends AQuery {
         Set<String> removables = new HashSet<>();
 
         results.keySet().forEach(key -> {
-            if((double)(int)results.get(key) / (double)(int)total < THRESOLD){
+            if ((double) (int) results.get(key) / (double) (int) total < THRESOLD) {
                 removables.add(key);
             }
         });
@@ -84,20 +128,5 @@ public class ProjectsTechnologiesQuery  extends AQuery {
         removables.forEach(results::remove);
     }
 
-    private void clear(){
-        results.clear();
-    }
-
-    private SearchResult<Sample> retrieveSamplesFromOpenBis() {
-
-        SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
-        sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.TEST_SAMPLE.toString());
-
-        SampleFetchOptions fetchOptions = new SampleFetchOptions();
-        fetchOptions.withChildren().withType();
-        fetchOptions.withProperties();
-
-        return v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
-    }
 
 }

@@ -42,6 +42,8 @@ public class OrganismCountQuery extends AQuery {
     private final IApplicationServerApi v3;
     private final String sessionToken;
 
+    private  SearchResult<Sample> searchResult;
+
     private final List<String> largeSpecies = new ArrayList<>(); //Species >= largeThreshold share
 
     private final Map<String, String> vocabularyMap = new HashMap<>(); //511145=Escherichia coli strain K12 MG1655 [NCBI ID = Name]
@@ -73,7 +75,9 @@ public class OrganismCountQuery extends AQuery {
         mapTaxonomyIDToName();
 
         logger.info("Count OpenBis samples on species basis.");
-        countSamplesPerOrganism(retrieveSamplesFromOpenBis());
+        retrieveSamplesFromOpenBis();
+        removeBlacklistedSpaces();
+        countSamplesPerOrganism();
 
         logger.info("Map species to domain and genus");
         setOrganismToDomainAndGenusMap();
@@ -125,10 +129,9 @@ public class OrganismCountQuery extends AQuery {
         speciesCountMaps.clear();
     }
 
-    private SearchResult<Sample> retrieveSamplesFromOpenBis() {
+    private void retrieveSamplesFromOpenBis() {
 
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
-        sampleSourcesCriteria.withSpace();
         sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.toString());
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
@@ -136,17 +139,30 @@ public class OrganismCountQuery extends AQuery {
         fetchOptions.withProject();
         fetchOptions.withSpace();
         fetchOptions.withProperties();
+        searchResult = v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
 
-        return v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
     }
 
-    private void countSamplesPerOrganism(SearchResult<Sample> sampleSources) {
-        //Iterate over all search results
-        sampleSources.getObjects().forEach(experiment -> {
-            //If sample does not belong to a blacklisted space, then increment its organism count
-            if (!SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
-                Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1);
+    @Override
+    void  removeBlacklistedSpaces(){
+
+        List<Sample> removables = new ArrayList<>();
+        searchResult.getObjects().forEach(experiment -> {
+            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
+                removables.add(experiment);
             }
+        });
+        searchResult.getObjects().removeAll(removables);
+
+        logger.info("Removed results from blacklisted OpenBis Spaces: " + SpaceBlackList.getList().toString());
+
+    }
+
+    private void countSamplesPerOrganism() {
+        //Iterate over all search results
+        searchResult.getObjects().forEach(experiment -> {
+            Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1);
+
         });
     }
 

@@ -2,7 +2,10 @@ package io.commandline;
 
 import picocli.CommandLine.Option;
 
-public class OpenBisCredentials {
+public class CommandLineArguments {
+
+    @Option(names = {"-h", "--help"}, description = "display a help message", usageHelp = true)
+    private boolean help;
 
     @Option(names = {"-url"}, description = "OpenBIS URL to access", required = true)
     private String openBISUrl;
@@ -30,5 +33,9 @@ public class OpenBisCredentials {
 
     public String getOutputFileName() {
         return outputFileName;
+    }
+
+    public boolean isHelp() {
+        return help;
     }
 }
