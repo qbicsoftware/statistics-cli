@@ -19,6 +19,7 @@ import java.util.*;
  */
 public class ProjectsTechnologiesQuery extends AQuery {
 
+    //TODO still waiting for feedback from PMs
     private static final Logger logger = new Log4j2Logger(ProjectsTechnologiesQuery.class);
 
     private final double THRESOLD = 0.05; //TODO move this one to config
@@ -68,7 +69,6 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
         SpaceFetchOptions s = new SpaceFetchOptions();
         s.withSamples().withChildren().withType();
-
 
         searchResult = v3.searchSpaces(sessionToken, c, s);
 

@@ -5,10 +5,8 @@ import logging.Logger;
 import submodule.data.ChartConfig;
 import submodule.data.ChartSettings;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 /**
  * @author fhanssen
  * This static class holds useful helper methods, that have to be reused for multiple queries.
@@ -38,6 +36,13 @@ public final class Helpers {
             l.add(listElement);
             map.put(key, l);
         }
+    }
+
+    public static List<String> getCommonElements(List<String> listOne, List<String> listTwo){
+        listOne.replaceAll(String::toUpperCase);
+        listTwo.replaceAll(String::toUpperCase);
+        listOne.retainAll(listTwo);
+        return listOne;
     }
 
     /**

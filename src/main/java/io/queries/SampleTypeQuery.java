@@ -31,6 +31,8 @@ public class SampleTypeQuery extends AQuery {
     private final Map<String, Object> results = new HashMap<>();
 
     private SearchResult<Sample> searchResult;
+
+
     public SampleTypeQuery(IApplicationServerApi v3, String sessionToken) {
         this.v3 = v3;
         this.sessionToken = sessionToken;
@@ -72,7 +74,11 @@ public class SampleTypeQuery extends AQuery {
     private void countSampleTypes() {
 
         searchResult.getObjects().forEach(sample -> {
-            Helpers.addEntryToStringCountMap(results, sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()), 1);
+            if( sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()).toUpperCase().contains("RNA")){
+                Helpers.addEntryToStringCountMap(results, "RNA", 1);     //TODO Lump all RNA together: Needs to be tested on big instance, since test instance only contains RNA
+            }else {
+                Helpers.addEntryToStringCountMap(results, sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()), 1);
+            }
         });
     }
 

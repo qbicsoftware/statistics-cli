@@ -27,7 +27,7 @@ public class MainController {
 
     //Query classes
     private final AQuery organismCountQuery;
-//    private final AQuery availablePipelinesQuery;
+    private final AQuery availablePipelinesQuery;
     private final AQuery projectsTechnologiesQuery;
     private final AQuery sampleTypeQuery;
 
@@ -44,7 +44,7 @@ public class MainController {
 
         //init query classes
         organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
-//        availablePipelinesQuery = new AvailablePipelinesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        availablePipelinesQuery = new WorkflowQueries(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
         projectsTechnologiesQuery = new ProjectsTechnologiesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
         sampleTypeQuery = new SampleTypeQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
 
@@ -65,7 +65,7 @@ public class MainController {
     private void queryAll() {
 
         query(organismCountQuery);
-//        query(availablePipelinesQuery);
+        query(availablePipelinesQuery);
         query(projectsTechnologiesQuery);
         query(sampleTypeQuery);
 
