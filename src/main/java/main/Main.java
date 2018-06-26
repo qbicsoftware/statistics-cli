@@ -1,7 +1,8 @@
 package main;
 
 import controller.MainController;
-import io.commandline.OpenBisCredentials;
+import io.commandline.CommandLineParser;
+import io.commandline.CommandLineArguments;
 import logging.Log4j2Logger;
 import logging.Logger;
 import picocli.CommandLine;
@@ -20,8 +21,8 @@ public class Main {
         //TODO at some point have main only start the program
 
         try {
-            OpenBisCredentials openBisCredentials = CommandLine.populateCommand(new OpenBisCredentials(), args);
-            MainController mainController = new MainController(openBisCredentials);
+            CommandLineArguments commandlineOptions = CommandLineParser.parseCommandlineParameters(args);
+            MainController mainController = new MainController(commandlineOptions);
         } catch (CommandLine.ParameterException e) {
             logger.error("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing." + e.getMessage());
         }
