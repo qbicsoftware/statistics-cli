@@ -45,6 +45,7 @@ public class OrganismCountQuery extends AQuery {
     private  SearchResult<Sample> searchResult;
 
     private final List<String> largeSpecies = new ArrayList<>(); //Species >= largeThreshold share
+    private final Set<String> largeDomains = new HashSet<>();
 
     private final Map<String, String> vocabularyMap = new HashMap<>(); //511145=Escherichia coli strain K12 MG1655 [NCBI ID = Name]
 
@@ -105,14 +106,20 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Set results.");
 
         //Add Superkingdom to config
-        result.put("SuperKingdom", Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain"));
+        largeDomains.forEach(largeDomain ->{
+            domainCountMap.put("Other ".concat(largeDomain), domainCountMap.get(largeDomain));
+        });
+        largeDomains.forEach(largeDomain ->{
+            domainCountMap.remove(largeDomain);
+        });
+        result.put("SuperKingdom", addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain")));
 
         //Add Genus maps to config
         genusCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Genus"), Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain))));
+                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain)))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Species"), Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "")));
+                result.put(domain.concat("_Species"), addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, ""))));
 
         //Add species to genus map
         result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), ""));
@@ -220,6 +227,7 @@ public class OrganismCountQuery extends AQuery {
     }
 
     private void filterForLargeOrganisms() {
+
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
             if (perc > THRESHOLD && perc < 100.0) {
@@ -227,9 +235,11 @@ public class OrganismCountQuery extends AQuery {
                 int currCount = (int) domainCountMap.get(organismDomainMap.get(o));
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));
                 domainCountMap.put(organismDomainMap.get(o), currCount - organismCountMap.get(o));
+                largeDomains.add(organismDomainMap.get(o));
             }
 
         });
+
     }
 
     private void generateGenusCountMap() {
@@ -269,6 +279,28 @@ public class OrganismCountQuery extends AQuery {
         );
     }
 
+    private ChartConfig addPercentages(ChartConfig chartConfig){
+        int totalCount = 0;
+        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[chartConfig.getData().keySet().size()]);
+        String[] keySet = Arrays.asList(objectArray).toArray(new String[objectArray.length]);
+
+        //Compute total count
+        for (String aKeySet : keySet) {
+            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
+                totalCount += (int)chartConfig.getData().get(aKeySet).get(i);
+            }
+        }
+
+        //Compute percentage and round to one decimal position
+        List<Double> yCategories = new ArrayList<>();
+        for (String aKeySet : keySet) {
+            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
+                yCategories.add( Math.round(10.0 * (100.0 * (double) ((int)chartConfig.getData().get(aKeySet).get(i))/(double) ((int)totalCount)))/ 10.0);
+            }
+        }
+        chartConfig.getSettings().setyCategories(new ArrayList<>(yCategories));
+        return chartConfig;
+    }
 
 
 }

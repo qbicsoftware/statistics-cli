@@ -64,10 +64,10 @@ public class MainController {
      */
     private void queryAll() {
 
-        query(organismCountQuery);
-        query(availablePipelinesQuery);
-        query(projectsTechnologiesQuery);
-        query(sampleTypeQuery);
+       query(organismCountQuery);
+       query(availablePipelinesQuery);
+       //query(projectsTechnologiesQuery);
+       query(sampleTypeQuery);
 
         //TODO 3: Add your query call here
 
@@ -82,6 +82,9 @@ public class MainController {
         } catch (Exception e) {
             e.printStackTrace();
             logger.info("Query " + queryClass.getClass() +"  failed with: " + e.getMessage());
+
+            // logger.error("Could not load file", e);
+            // logger.error("Query '{}' failed with: {}", queryClass.getClass(), e);
         }
     }
 

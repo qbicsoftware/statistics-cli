@@ -67,7 +67,6 @@ public final class Helpers {
         chartSettings.setTitle(chartTitle);
         //Set xCategories
         List<String> xCategories = new ArrayList<>(result.keySet());
-
         chartSettings.setxCategories(new ArrayList<>(xCategories));
 
         //Add settings to chart config

@@ -34,9 +34,9 @@ public class WorkflowQueries extends AQuery {
     private static final Logger logger = new Log4j2Logger(WorkflowQueries.class);
 
     //TODO: Maybe move these to config, in case they change over time
-    private final String GITHUB_Url = "https://api.github.com/orgs/qbicsoftware/repos";
-    private final String HEADER_KEY = "Accept";
-    private final String HEADER_VALUE = "application/vnd.github.mercy-preview+json";
+    private static final String GITHUB_Url = "https://api.github.com/orgs/qbicsoftware/repos";
+    private static final String HEADER_KEY = "Accept";
+    private static final String HEADER_VALUE = "application/vnd.github.mercy-preview+json";
 
     private final IApplicationServerApi v3;
     private final String sessionToken;
