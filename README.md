@@ -1,6 +1,8 @@
-# Data Retrieval for Data Representation
+# Statistics CLI
 
-This tools is responsible for data retrieval and formatting, in order to visualize data on our homepage.
+[![Build Status](https://travis-ci.com/qbicsoftware/statistics-cli.svg?branch=development)](https://travis-ci.com/qbicsoftware/statistics-cli)[![Code Coverage]( https://codecov.io/gh/qbicsoftware/statistics-cli/branch/development/graph/badge.svg)](https://codecov.io/gh/qbicsoftware/statistics-cli)
+
+Statistics CLI, version 1.0.0-SNAPSHOT - This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.
 It strongly collaborates with the statistics portlet (https://github.com/qbicsoftware/qbic-statistics), 
 which is responsible for the actual visualization from given data.
 
@@ -8,8 +10,8 @@ which is responsible for the actual visualization from given data.
 The retrieved data is stored in a YAML file using SnakeYAML. For details on the YAML format, see here: https://github.com/Animosity/CraftIRC/wiki/Complete-idiot%27s-introduction-to-yaml. 
 For details on SnakeYAML, see here: https://bitbucket.org/asomov/snakeyaml. 
 
-Furthermore, classes are shared between this tool and the visualization portlet (https://github.com/qbicsoftware/qbic-statistics). 
-The shared code is incorporated as a submodule. The submodules repo can be found here: https://github.com/qbicsoftware/qbic-statistics-core.
+Furthermore, classes are shared between this tool and the visualization portlet (https://github.com/qbicsoftware/statistics-portlet). 
+The shared code is incorporated as a dependency. The repo can be found here: https://github.com/qbicsoftware/statistics-plugin.
 
 
 ## Config File format
@@ -37,22 +39,8 @@ it properly. The steps are highlighted in the code as TODOs:
 3. Navigate to the MainController and add your query call. 
 
 4. In the MainController add your resulting ChartConfigs to the MainConfig object.
+ 
 
-## How to change classes in the submodule
-
-In order to change classes from the submodule, clone the repo at https://github.com/qbicsoftware/qbic-statistics-core
-and edit the classes as you like. When you are done, commit your changes to the master branch as usual.
-
-After commiting your changes to the qbic-statistics core repo, navigate into your local copy of statistics-data-retrieval 
-and execute the following command:
-
-``git submodule foreach git pull origin master``
-
-The submodule classes are now updated automatically. All other repos that implement this submodule receive the same
-updates, if the above command is called. Otherwise, your submodule will point to the time-point in history, it was updated last. 
-
-### General Remarks
-* Most names of anything are stored in the lexica package as enum classes. In case they change at a certain point,
-    they only have to be adjusted in one place.
-* There are Helper functions that are likely to be used frequently by different classes. 
+## Author
+Created by Friederike Hanssen (friederike.hanssen@student.uni-tuebingen.de).
 

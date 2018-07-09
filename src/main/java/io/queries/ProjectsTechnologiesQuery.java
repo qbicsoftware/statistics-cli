@@ -2,6 +2,9 @@ package io.queries;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.Experiment;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCriteria;
@@ -13,6 +16,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.fetchoptions.SpaceFetchOpt
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.search.SpaceSearchCriteria;
 import ch.ethz.sis.openbis.generic.asapi.v3.exceptions.NotFetchedException;
 import io.queries.utils.Helpers;
+import io.queries.utils.lexica.OpenBisTerminology;
 import io.queries.utils.lexica.SpaceBlackList;
 import logging.Log4j2Logger;
 import logging.Logger;
@@ -34,7 +38,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
     private final IApplicationServerApi v3;
     private final String sessionToken;
 
-    private  SearchResult<Space> searchResult;
+    private SearchResult<Space> searchResult;
 
     private final Map<String, Object> results = new HashMap<>();
 
@@ -53,14 +57,14 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
         clear();
 
-        retrieveSamplesFromOpenBis();
-  //      removeBlacklistedSpaces();
+        retrieveDataFromOpenBis();
+        //      removeBlacklistedSpaces();
 
-   //     countProjectsByTechnolgy();
-    //    removeMinorities();
+        //     countProjectsByTechnolgy();
+        //    removeMinorities();
 //
         Map<String, ChartConfig> map = new HashMap<>();
- //       map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(results, "counts", "Project Counts"));
+        //       map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(results, "counts", "Project Counts"));
 //        System.out.println(results.toString());
 
         return map;
@@ -70,100 +74,36 @@ public class ProjectsTechnologiesQuery extends AQuery {
         results.clear();
     }
 
-    private void retrieveSamplesFromOpenBis() {
+    private void retrieveDataFromOpenBis() {
 
-        //TODO this spits out a result verifiable with the testing version: check with chris
-
-        //Bug in open bis? can't seem to connect projects with samples
-        SpaceSearchCriteria c  = new SpaceSearchCriteria();
-        c.withCode();
+        SpaceSearchCriteria c = new SpaceSearchCriteria();
 
         SpaceFetchOptions s = new SpaceFetchOptions();
-        //s.withProjects();
+        s.withSamples().withChildren().withType();
 
-        ProjectFetchOptions test = new ProjectFetchOptions();
-        test.withSamples();
-
-        s.withProjectsUsing(test);
-//        s.withSamples();
-//        s.withProjects().withSamples(); //This does not work
-//        s.withSamples().withChildren().withType();
-//        s.withSamples().withProjectUsing(new ProjectFetchOptions()); // This does not work
 
         searchResult = v3.searchSpaces(sessionToken, c, s);
 
-        List<String> projects = new ArrayList<>();
-        searchResult.getObjects().forEach(space -> {
-            //System.out.println(space.getCode());
-            space.getProjects().forEach(project -> {
-                projects.add(project.getCode());
-                project.getSamples();
-//                //System.out.println(project.getCode());
-////                project.getSamples().forEach(sample -> {
-////                    samples.add(sample.getCode());
-////                });
-//
-//
-           });
 
-//            space.getSamples().forEach(sample -> {
-//                //sample.getProject();
-//            });
-//            //System.out.println(space.getProjects());
-        });
-        System.out.println(projects.size());
 
-        ProjectSearchCriteria p = new ProjectSearchCriteria();
-//        p.withCode();
-//
-        ProjectFetchOptions pf = new ProjectFetchOptions();
-        pf.withSamples(); //This does not work
-//        pf.withSamples().withType();
-//
-//
-////        System.out.println( v3.searchProjects(sessionToken, p, pf).getTotalCount());
-////
-        SearchResult<Project> r =  v3.searchProjects(sessionToken, p, pf);
-//        System.out.println(r.getTotalCount());
-//
-        r.getObjects().forEach(project -> {
-            project.getCode();
-//            project.getSamples().forEach(sample -> {
-//                sample.getType().toString();
-//            });
-        });
-
-        SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();
-
-        SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();
-        sampleFetchOptions.withProjectUsing(new ProjectFetchOptions()); // this does not work
-        sampleFetchOptions.withSpace();
-        sampleFetchOptions.withChildren().withType();
-
-        SearchResult<Sample> sampleSearchResult = v3.searchSamples(sessionToken, sampleSearchCriteria, sampleFetchOptions);
-        System.out.println(sampleSearchResult.getTotalCount());
-
-        Set<String> spaces = new HashSet<>();
-        sampleSearchResult.getObjects().forEach(sample -> {
-            spaces.add(sample.getSpace().getCode());
-        });
-
-        System.out.println(spaces.size());
-
+        System.out.println(results);
     }
 
-    public Set<String> findDuplicates(List<String> listContainingDuplicates) {
+    private void addSpaceTechCount(Set<String> omicsType) {
 
-        final Set<String> setToReturn = new HashSet<String>();
-        final Set<String> set1 = new HashSet<String>();
-
-        for (String yourInt : listContainingDuplicates) {
-            if (!set1.add(yourInt)) {
-                setToReturn.add(yourInt);
-            }
+        String curr;
+        if(omicsType.size() > 1){
+            curr = "Multi-omics";
+        }else if(omicsType.size() == 1){
+            curr = omicsType.iterator().next();
+        }else{
+            curr = "Unknown";
         }
-        return setToReturn;
+
+        Helpers.addEntryToStringCountMap(results, curr, 1);
+
     }
+
 
     @Override
     void removeBlacklistedSpaces() {
@@ -180,20 +120,26 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
     }
 
-    private void countProjectsByTechnology() {
+    private void countSpacesByTechnology() {
 
         searchResult.getObjects().forEach(space -> {
+            Set<String> omicsType = new HashSet<>();
             space.getSamples().forEach(sample -> {
-                System.out.println(sample.getProject().getCode());
+
 
                 sample.getChildren().forEach(omicsChild -> {
 
-                    if (isOmicsRun(omicsChild.getType().toString())) {
-                        Helpers.addEntryToStringCountMap(results, getOmicsName(omicsChild.getType().toString()), 1);
+                    if(omicsChild.getType().toString().split("_").length > 1) {
+
+                        if (!omicsChild.getType().toString().split("_")[1].equals("WF") && omicsChild.getType().toString().split("_")[omicsChild.getType().toString().split("_").length - 1].equals("RUN")) {
+                            omicsType.add(omicsChild.getType().toString().replace("SampleType ", ""));
+                        }
                     }
 
                 });
+
             });
+            addSpaceTechCount(omicsType);
         });
     }
 
@@ -206,21 +152,6 @@ public class ProjectsTechnologiesQuery extends AQuery {
         return name.split("_")[1];
     }
 
-
-    private void removeMinorities() {
-
-        int total = results.values().stream().mapToInt(r -> (int) r).sum();
-
-        Set<String> removables = new HashSet<>();
-
-        results.keySet().forEach(key -> {
-            if ((double) (int) results.get(key) / (double) (int) total < THRESOLD) {
-                removables.add(key);
-            }
-        });
-
-        removables.forEach(results::remove);
-    }
 
 
 }
