@@ -11,9 +11,6 @@ import picocli.CommandLine.Option;
    description="This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.")
 public class MainCommand extends AbstractCommand {
     // TODO: add your command-line options as members of this class using picocli's annotations, for instance:
-    @Option(names = {"-h", "--help"}, description = "display a help message", usageHelp = true)
-    private boolean help;
-
     @Option(names = {"-url"}, description = "OpenBIS URL to access", required = true)
     private String openBISUrl;
 
@@ -40,9 +37,5 @@ public class MainCommand extends AbstractCommand {
 
     public String getOutputFileName() {
         return outputFileName;
-    }
-
-    public boolean isHelp() {
-        return help;
     }
 }
