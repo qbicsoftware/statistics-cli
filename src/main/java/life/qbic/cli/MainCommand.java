@@ -7,7 +7,7 @@ import picocli.CommandLine.Option;
  * Abstraction of command-line arguments that will be passed to {@link MainTool} at construction time.
  */
 @Command(
-   name="Main",
+   name="Statistics-CLI",
    description="This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.")
 public class MainCommand extends AbstractCommand {
     // TODO: add your command-line options as members of this class using picocli's annotations, for instance:

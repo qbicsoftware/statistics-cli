@@ -18,7 +18,6 @@ public class MainEntryPoint {
      * @param args the command-line arguments.
      */
     public static void main(final String[] args) {
-        System.out.println("sth here");
         LOG.debug("Starting Main tool");
         final ToolExecutor executor = new ToolExecutor();
         executor.invoke(MainTool.class, MainCommand.class, args);
