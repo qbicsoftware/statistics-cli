@@ -201,6 +201,7 @@ public class WorkflowQueries extends AQuery {
         searchResult.getObjects().forEach(o ->{
             String[] arr = o.getType().toString().split("_");
             if(arr.length > 1) {
+                //TODO issue when clicking on the chart due to naming: fix that
                 if (arr[1].equals("WF")) {
                     Helpers.addEntryToStringCountMap(workflowTypeCountResult, arr[2], 1);
                 }

@@ -6,6 +6,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.OmicsType;
 import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +44,7 @@ public class SampleTypeQuery extends AQuery {
         clear();
 
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces();
+        removeBlacklistedSpaces();
 
         countSampleTypes();
 
@@ -75,6 +76,7 @@ public class SampleTypeQuery extends AQuery {
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
                 if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length-1].equals("RUN")) {
+                    //TODO reactivate the methods here
                     omicsType.add(c.getType().toString().replace("SampleType ",""));
                 }
             });
@@ -83,6 +85,7 @@ public class SampleTypeQuery extends AQuery {
                 //TODO Lump all RNA together: Needs to be tested on big instance, since test instance only contains RNA
                 addSampleTechCount("RNA", omicsType);
             }else {
+                System.out.println(OpenBisTerminology.SAMPLE_TYPE.toString() +" " + omicsType.toString());
                 addSampleTechCount(sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()), omicsType);
             }
         });
@@ -93,7 +96,7 @@ public class SampleTypeQuery extends AQuery {
 
         String curr;
         if(omicsType.size() > 1){
-            curr = "Multi-omics";
+            curr = OmicsType.MULTI_OMICS.toString();
         }else if(omicsType.size() == 1){
             curr = omicsType.iterator().next();
         }else{
@@ -120,6 +123,7 @@ public class SampleTypeQuery extends AQuery {
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withProperties();
         fetchOptions.withChildren().withType();
+
 
         searchResult =  v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
 

@@ -39,6 +39,16 @@ public final class Helpers {
         }
     }
 
+    public static void addEntryToSetCountMap(Map map, Set key, int count) {
+
+        if (map.containsKey(key)) {
+            int counter = (int)map.get(key);
+            map.put(key, counter + count);
+        } else {
+            map.put(key, count);
+        }
+    }
+
     public static List<String> getCommonElements(List<String> listOne, List<String> listTwo){
         listOne.replaceAll(String::toUpperCase);
         listTwo.replaceAll(String::toUpperCase);
@@ -84,6 +94,7 @@ public final class Helpers {
 
         return chartConfig;
     }
+
 
 
 }

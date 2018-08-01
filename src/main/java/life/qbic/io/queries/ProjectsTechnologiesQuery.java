@@ -2,14 +2,17 @@ package life.qbic.io.queries;
 
 import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.Space;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.fetchoptions.SpaceFetchOptions;
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.space.search.SpaceSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.OmicsType;
+import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import submodule.data.ChartConfig;
+import submodule.lexica.ChartNames;
 
 import java.util.*;
 
@@ -26,11 +29,12 @@ public class ProjectsTechnologiesQuery extends AQuery {
     private final IApplicationServerApi v3;
     private final String sessionToken;
 
-    private SearchResult<Space> searchResult;
+    private SearchResult<Sample> searchResult;
 
-    private final Map<String, Object> results = new HashMap<>();
+    private final Map<String, Object> resultsProjectCounts = new HashMap<>();
 
     private final Map<String, Set<String>> projectCodeToType = new HashMap<>();
+    private final Map<Set<String>, Integer> multiOmicsCount = new HashMap<>();
 
     public ProjectsTechnologiesQuery(IApplicationServerApi v3, String sessionToken) {
         this.v3 = v3;
@@ -46,100 +50,99 @@ public class ProjectsTechnologiesQuery extends AQuery {
         clear();
 
         retrieveDataFromOpenBis();
-        //      removeBlacklistedSpaces();
+        removeBlacklistedSpaces();
 
-        //     countProjectsByTechnolgy();
-        //    removeMinorities();
-//
+        createProjectcodeTypeMap();
+        countProjectsByType();
+
         Map<String, ChartConfig> map = new HashMap<>();
-        //       map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(results, "counts", "Project Counts"));
-//        System.out.println(results.toString());
+
+        Map<String, Object> temp = new HashMap<>();
+        temp.put("Multiomics", multiOmicsCount);
+        map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(resultsProjectCounts, "counts", "Project Counts"));
+        map.put("Multiomics Count", Helpers.generateChartConfig(temp, "Multiomics count", "Multiomics count"));
+//      System.out.println(resultsProjectCounts.toString());
 
         return map;
     }
 
     private void clear() {
-        results.clear();
+        resultsProjectCounts.clear();
     }
 
     private void retrieveDataFromOpenBis() {
 
-        SpaceSearchCriteria c = new SpaceSearchCriteria();
+        SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();
+        sampleSearchCriteria.withType().withCode().thatEquals(OpenBisTerminology.TEST_SAMPLE.toString());
 
-        SpaceFetchOptions s = new SpaceFetchOptions();
-        s.withSamples().withChildren().withType();
+        SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();
+        sampleFetchOptions.withChildren().withType();
 
-
-        searchResult = v3.searchSpaces(sessionToken, c, s);
-
-
-
-        System.out.println(results);
-    }
-
-    private void addSpaceTechCount(Set<String> omicsType) {
-
-        String curr;
-        if(omicsType.size() > 1){
-            curr = "Multi-omics";
-        }else if(omicsType.size() == 1){
-            curr = omicsType.iterator().next();
-        }else{
-            curr = "Unknown";
-        }
-
-        Helpers.addEntryToStringCountMap(results, curr, 1);
+        searchResult = v3.searchSamples(sessionToken, sampleSearchCriteria, sampleFetchOptions);
 
     }
-
 
     @Override
     void removeBlacklistedSpaces() {
 
-        List<Space> removables = new ArrayList<>();
-        searchResult.getObjects().forEach(space -> {
-            if (SpaceBlackList.getList().contains(space.getCode())) {
-                removables.add(space);
+        List<Sample> removables = new ArrayList<>();
+        searchResult.getObjects().forEach(experiment -> {
+            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {
+                removables.add(experiment);
             }
         });
         searchResult.getObjects().removeAll(removables);
-
-        logger.info("Removed results from blacklisted OpenBis Spaces: " + SpaceBlackList.getList().toString());
+        logger.info("Removed resultsProjectCounts from blacklisted OpenBis Spaces: " + SpaceBlackList.getList().toString());
 
     }
 
-    private void countSpacesByTechnology() {
+    private void createProjectcodeTypeMap(){
+        searchResult.getObjects().forEach(sample -> {
 
-        searchResult.getObjects().forEach(space -> {
             Set<String> omicsType = new HashSet<>();
-            space.getSamples().forEach(sample -> {
 
-
-                sample.getChildren().forEach(omicsChild -> {
-
-                    if(omicsChild.getType().toString().split("_").length > 1) {
-
-                        if (!omicsChild.getType().toString().split("_")[1].equals("WF") && omicsChild.getType().toString().split("_")[omicsChild.getType().toString().split("_").length - 1].equals("RUN")) {
-                            omicsType.add(omicsChild.getType().toString().replace("SampleType ", ""));
-                        }
-                    }
-
-                });
-
+            //Determine omics type per sample
+            sample.getChildren().forEach(c -> {
+                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length-1].equals("RUN")) {
+                    omicsType.add(c.getType().toString().replace("SampleType ",""));
+                }
             });
-            addSpaceTechCount(omicsType);
+
+            String projectCode = sample.getCode().substring(0,5);
+            if(projectCodeToType.containsKey(projectCode)){
+                omicsType.addAll(projectCodeToType.get(projectCode));
+            }
+            projectCodeToType.put(projectCode, omicsType);
+        });
+
+        for(String p : projectCodeToType.keySet()){
+            System.out.println(p + " --> " +projectCodeToType.get(p));
+        }
+    }
+
+    private void countProjectsByType(){
+
+        projectCodeToType.keySet().forEach(projectCode ->{
+            if(projectCodeToType.get(projectCode).size() > 1){
+                Helpers.addEntryToStringCountMap(resultsProjectCounts, OmicsType.MULTI_OMICS.toString(), 1);
+                Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);
+            }else{
+                Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);
+            }
         });
     }
 
-    private boolean isOmicsRun(String name) {
-        String[] array = name.split("_");
-        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
-    }
 
-    private String getOmicsName(String name) {
-        return name.split("_")[1];
-    }
 
+//    private boolean isOmicsRun(String name) {
+//        String[] array = name.split("_");
+//        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
+//    }
+//
+//    private String getOmicsName(String name) {
+//        return name.split("_")[1];
+//    }
+//
 
 
 }
