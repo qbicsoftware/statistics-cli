@@ -8,7 +8,7 @@ cache:
 branches:
   only:
   - master
-  - developer
+  - development
 before_install: unset _JAVA_OPTIONS
 install: true
 before_script: if [ "$VAADIN_CHARTS_LICENSE_CODE" != "" ]; then echo "$VAADIN_CHARTS_LICENSE_CODE"
