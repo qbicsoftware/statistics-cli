@@ -6,13 +6,13 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
 import life.qbic.io.queries.utils.Helpers;
-import life.qbic.io.queries.utils.lexica.OmicsType;
 import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import submodule.data.ChartConfig;
 import submodule.lexica.ChartNames;
+import submodule.lexica.Other;
 
 import java.util.*;
 
@@ -96,7 +96,7 @@ public class SampleTypeQuery extends AQuery {
 
         String curr = "";
         if(omicsType.size() > 1){
-            curr = OmicsType.MULTI_OMICS.toString();
+            curr = Other.Multi_omics.toString();
         }else if(omicsType.size() == 1){
             curr = omicsType.iterator().next();
         }

@@ -65,8 +65,8 @@ public class MainController {
     private void queryAll() {
 
        //query(organismCountQuery);
-       query(availablePipelinesQuery);
-       //query(projectsTechnologiesQuery);
+       //query(availablePipelinesQuery); //TODO handle timeout exception
+       query(projectsTechnologiesQuery);
        //query(sampleTypeQuery);
 
         //TODO 3: Add your query call here
