@@ -112,17 +112,17 @@ public class OrganismCountQuery extends AQuery {
         largeDomains.forEach(largeDomain ->{
             domainCountMap.remove(largeDomain);
         });
-        result.put("SuperKingdom", addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain")));
+        result.put("SuperKingdom", addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain", "Organisms")));
 
         //Add Genus maps to config
         genusCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain)))));
+                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain), "Organisms"))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Species"), addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, ""))));
+                result.put(domain.concat("_Species"), addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "", "Organisms"))));
 
         //Add species to genus map
-        result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), ""));
+        result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), "", "Organisms"));
 
         return result;
     }

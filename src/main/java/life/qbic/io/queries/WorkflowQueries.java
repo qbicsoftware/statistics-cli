@@ -82,7 +82,7 @@ public class WorkflowQueries extends AQuery {
         workflows.keySet().forEach(type ->
                 result.put(ChartNames.Available_Workflows_.toString().concat(type.toUpperCase()), customizeChartConfig(workflows.get(type), type.toUpperCase())));
 
-        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow Execution Counts"));
+        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow Execution Counts", "Workflow"));
 
         return result;
     }
@@ -113,7 +113,7 @@ public class WorkflowQueries extends AQuery {
         Map<String, Object> resultMap = new HashMap<>();
         list.forEach(a -> resultMap.put(Objects.toString(a.get("url"), ""), a.get("stargazers_count")));
 
-        ChartConfig chartConfig = Helpers.generateChartConfig(resultMap, "stargazers_count", "Available Workflows ".concat(title));
+        ChartConfig chartConfig = Helpers.generateChartConfig(resultMap, "stargazers_count", "Available Workflows ".concat(title), "Workflow");
 
         List<String> descriptions = new ArrayList<>();
         list.forEach(a -> descriptions.add(Objects.toString(a.get("description"), "")));
