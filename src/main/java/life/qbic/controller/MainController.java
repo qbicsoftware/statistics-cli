@@ -66,8 +66,8 @@ public class MainController {
 
        //query(organismCountQuery);
        //query(availablePipelinesQuery);
-       query(projectsTechnologiesQuery);
-       //query(sampleTypeQuery);
+       //query(projectsTechnologiesQuery);
+       query(sampleTypeQuery);
 
         //TODO 3: Add your query call here
 
