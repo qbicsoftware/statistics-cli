@@ -65,9 +65,9 @@ public class MainController {
     private void queryAll() {
 
        //query(organismCountQuery);
-       //query(availablePipelinesQuery);
+       query(availablePipelinesQuery);
        //query(projectsTechnologiesQuery);
-       query(sampleTypeQuery);
+       //query(sampleTypeQuery);
 
         //TODO 3: Add your query call here
 

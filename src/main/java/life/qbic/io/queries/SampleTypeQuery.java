@@ -50,7 +50,7 @@ public class SampleTypeQuery extends AQuery {
         countSampleTypes();
 
         Map<String, ChartConfig> map = new HashMap<>();
-        map.put(ChartNames.Sample_Types.toString(),Helpers.generateChartConfig(result, "Samples", "Number of Already Measured Samples"));
+        map.put(ChartNames.Sample_Types.toString(),Helpers.generateChartConfig(result, "Samples", "Number of Already Measured Samples", "Samples"));
 
         return map;
     }

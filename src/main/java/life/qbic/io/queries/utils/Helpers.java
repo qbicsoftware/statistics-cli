@@ -65,9 +65,10 @@ public final class Helpers {
      * @param result Map holding categories as key, and the respective values as values
      * @param name
      * @param chartTitle  Chart title, stored in config and later displayed
+     * @param tabTitle
      * @return ChartConfig
      */
-    public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String chartTitle) {
+    public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String chartTitle, String tabTitle) {
 
         logger.info("Generate ChartConfig for: " + name + " " + chartTitle);
 
@@ -76,6 +77,8 @@ public final class Helpers {
         //Add chart settings
         ChartSettings chartSettings = new ChartSettings();
         chartSettings.setTitle(chartTitle);
+        chartSettings.setTabTitle(tabTitle);
+        System.out.println("\nTabtitle " + tabTitle);
         //Set xCategories
         List<String> xCategories = new ArrayList<>(result.keySet());
         chartSettings.setxCategories(new ArrayList<>(xCategories));
