@@ -44,12 +44,13 @@ public class SampleTypeQuery extends AQuery {
         clear();
 
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();
+        removeBlacklistedSpaces(); //TODO comment this back in
+        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
 
         countSampleTypes();
 
         Map<String, ChartConfig> map = new HashMap<>();
-        map.put(ChartNames.Sample_Types.toString(),Helpers.generateChartConfig(result, "Samples", "Sample Type Counts"));
+        map.put(ChartNames.Sample_Types.toString(),Helpers.generateChartConfig(result, "Samples", "Number of Already Measured Samples"));
 
         return map;
     }
@@ -85,7 +86,6 @@ public class SampleTypeQuery extends AQuery {
                 //TODO Lump all RNA together: Needs to be tested on big instance, since test instance only contains RNA
                 addSampleTechCount("RNA", omicsType);
             }else {
-                System.out.println(OpenBisTerminology.SAMPLE_TYPE.toString() +" " + omicsType.toString());
                 addSampleTechCount(sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()), omicsType);
             }
         });
@@ -94,20 +94,23 @@ public class SampleTypeQuery extends AQuery {
     private void addSampleTechCount(String sampleType, Set<String> omicsType) {
         Map<String, Integer> temp = new HashMap<>();
 
-        String curr;
+        String curr = "";
         if(omicsType.size() > 1){
             curr = OmicsType.MULTI_OMICS.toString();
         }else if(omicsType.size() == 1){
             curr = omicsType.iterator().next();
-        }else{
-            curr = "Unknown";
         }
 
-        if(result.keySet().contains(curr)){
-            temp = (Map)result.get(curr);
+        if(!curr.isEmpty()) {// if empty, then sample has not been measured("Unknown")
+            // : then don't do anything as we will ignore unmeasured samples.
+
+            if (result.keySet().contains(curr)) {
+                temp = (Map) result.get(curr);
+            }
+            Helpers.addEntryToStringCountMap(temp, sampleType, 1);
+            result.put(curr, temp);
+
         }
-        Helpers.addEntryToStringCountMap(temp, sampleType, 1);
-        result.put(curr, temp);
 
     }
 
@@ -123,6 +126,7 @@ public class SampleTypeQuery extends AQuery {
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withProperties();
         fetchOptions.withChildren().withType();
+        fetchOptions.withSpace();
 
 
         searchResult =  v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
