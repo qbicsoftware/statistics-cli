@@ -29,6 +29,7 @@ public class MainTool extends QBiCTool<MainCommand> {
         // TODO: do something useful with the obtained command.
 
         try {
+            //@/etc/qbic-stat.config jetty:run
             MainController mainController = new MainController(command);
         } catch (CommandLine.ParameterException e) {
             LOG.error("File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing." + e.getMessage());

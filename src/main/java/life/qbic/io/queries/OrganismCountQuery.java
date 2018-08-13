@@ -116,7 +116,7 @@ public class OrganismCountQuery extends AQuery {
 
         //Add Genus maps to config
         genusCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain)))));
+                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain)))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
                 result.put(domain.concat("_Species"), addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, ""))));
