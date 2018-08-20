@@ -5,14 +5,16 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.exceptions.InvalidProjectCodeException;
 import life.qbic.io.queries.utils.Helpers;
-import life.qbic.io.queries.utils.lexica.OmicsType;
 import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import submodule.data.ChartConfig;
 import submodule.lexica.ChartNames;
+import submodule.lexica.Other;
+import submodule.lexica.Translator;
 
 import java.util.*;
 
@@ -34,8 +36,6 @@ public class ProjectsTechnologiesQuery extends AQuery {
     private final Map<String, Set<String>> projectCodeToType = new HashMap<>();
     private final Map<Set<String>, Integer> multiOmicsCount = new HashMap<>();
 
-    private final Map<String, List<String>> projectCodeToSamples = new HashMap<>();
-
     public ProjectsTechnologiesQuery(IApplicationServerApi v3, String sessionToken) {
         this.v3 = v3;
         this.sessionToken = sessionToken;
@@ -50,21 +50,27 @@ public class ProjectsTechnologiesQuery extends AQuery {
         clear();
 
         retrieveDataFromOpenBis();
-        //removeBlacklistedSpaces();//TODO comment this back in
+        removeBlacklistedSpaces();//TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
-
 
         createProjectcodeTypeMap();
         countProjectsByType();
 
         Map<String, ChartConfig> map = new HashMap<>();
 
-        Map<String, Object> temp = new HashMap<>();
-        temp.put("Multiomics", multiOmicsCount);
+        Map<String, Object> mTemp = new HashMap<>();
+        for (Set<String> set : multiOmicsCount.keySet()) {
+            ArrayList<String> list = new ArrayList<>(set);
+            String name = "";
+            for (int i = 0; i < set.size() - 1; i++) {
+                name = name.concat(Translator.getTranslation(list.get(i))).concat(" + ");
+            }
+            name = name.concat(Translator.getTranslation(list.get(list.size() - 1)));
+            mTemp.put(name, multiOmicsCount.get(set));
+        }
 
-        System.out.println(multiOmicsCount);
-        map.put(ChartNames.Projects_Technology.toString(), Helpers.generateChartConfig(resultsProjectCounts, "project counts", "Project Counts with Measured Samples", "Projects"));
-        map.put("Project-Multiomics_Count", Helpers.generateChartConfig(temp, "multiomics", "Multiomics count", "Projects"));
+        map.put(ChartNames.Projects.toString(), Helpers.generateChartConfig(resultsProjectCounts, "project", "Project Counts with Measured Samples", "Projects"));
+        map.put(ChartNames.Project_Multi_omics.toString(), Helpers.generateChartConfig(mTemp, "multiomics", "Multiomics count", "Projects"));
 
         return map;
     }
@@ -100,62 +106,58 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
     }
 
-    private void createProjectcodeTypeMap(){
+    private void createProjectcodeTypeMap() {
         searchResult.getObjects().forEach(sample -> {
 
             Set<String> omicsType = new HashSet<>();
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length-1].equals("RUN")) {
-                    omicsType.add(c.getType().toString().replace("SampleType ",""));
+                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length - 1].equals("RUN")) {
+                    omicsType.add(c.getType().toString().replace("SampleType ", ""));
                 }
             });
 
-            if(sample.getCode().length() > 5) {
-                String projectCode = sample.getCode().substring(0, 5);
-                if(projectCodeToType.containsKey(projectCode)){
-                    omicsType.addAll(projectCodeToType.get(projectCode));
-                }
-                projectCodeToType.put(projectCode, omicsType);
+            try{
+                matchProjectCodeToType(sample.getCode(), omicsType);
+            }catch(InvalidProjectCodeException e){
+                logger.error("Query " + this.getClass() + ":" + e.getMessage());
 
-                List<String> samples = new ArrayList<>();
-                if(projectCodeToSamples.containsKey(projectCode)){
-                    samples = projectCodeToSamples.get(projectCode);
-                }
-                samples.add(sample.getCode());
-                projectCodeToSamples.put(projectCode, samples);
-            }else{
-                //TODO throw exception about unvalid code
-                System.out.println(sample.getCode());
             }
-
         });
 
-        for(String p : projectCodeToType.keySet()){
-            System.out.println(p + " --> " + projectCodeToType.get(p));
-        }
+    }
 
-        for(String p : projectCodeToSamples.keySet()){
-            System.out.println(p + " --> " + projectCodeToSamples.get(p));
+    private void matchProjectCodeToType(String code, Set<String> omicsType) throws InvalidProjectCodeException{
+        if (code.length() > 5) {
+            String projectCode = code.substring(0, 5);
+            if (projectCodeToType.containsKey(projectCode)) {
+                omicsType.addAll(projectCodeToType.get(projectCode));
+            }
+            projectCodeToType.put(projectCode, omicsType);
+        } else {
+            throw new InvalidProjectCodeException("Sample code is too short: " + code + ". At least 5 characters are expected in order to comply with sample code pattern of " +
+                    "<projectcode>.concat(<sampleidentifier>).");
         }
     }
 
-    private void countProjectsByType(){
+    private void countProjectsByType() {
 
-        projectCodeToType.keySet().forEach(projectCode ->{
-            if(projectCodeToType.get(projectCode).size() > 1){
-                Helpers.addEntryToStringCountMap(resultsProjectCounts, OmicsType.MULTI_OMICS.toString(), 1);
+        projectCodeToType.keySet().forEach(projectCode -> {
+            if (projectCodeToType.get(projectCode).size() > 1) {
+
+                Helpers.addEntryToStringCountMap(resultsProjectCounts, Translator.Multi_omics.getOriginal(), 1);
+
                 Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);
-            }else if (projectCodeToType.get(projectCode).size() < 1){
-                Helpers.addEntryToStringCountMap(resultsProjectCounts, "Unknown", 1);
-            }else{
-                Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);
 
+            } else if (projectCodeToType.get(projectCode).size() == 1) {
+                Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);
             }
+            //else{
+            //If unknown ignore
+            //}
         });
     }
-
 
 
 //    private boolean isOmicsRun(String name) {
@@ -167,6 +169,4 @@ public class ProjectsTechnologiesQuery extends AQuery {
 //        return name.split("_")[1];
 //    }
 //
-
-
 }
