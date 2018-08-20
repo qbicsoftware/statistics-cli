@@ -124,6 +124,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
                 }
                 projectCodeToType.put(projectCode, omicsType);
             }else{
+
                 //TODO throw exception about unvalid code
                 System.out.println(sample.getCode());
             }
@@ -141,12 +142,12 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
                 Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);
 
-            }else if (projectCodeToType.get(projectCode).size() < 1){
-                Helpers.addEntryToStringCountMap(resultsProjectCounts, "Unknown", 1);
-            }else{
+            }else if (projectCodeToType.get(projectCode).size() == 1){
                 Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);
-
             }
+            //else{
+                //If unknown ignore
+            //}
         });
     }
 
