@@ -1,6 +1,7 @@
 package life.qbic.controller;
 
 import life.qbic.cli.MainCommand;
+import life.qbic.exceptions.InvalidProjectCodeException;
 import life.qbic.io.queries.*;
 import life.qbic.io.webservice.OpenBisAccess;
 import life.qbic.io.writer.YAMLWriter;
@@ -78,10 +79,9 @@ public class MainController {
             logger.info("Run " + queryClass.getClass() +" query");
             Map<String, ChartConfig> result = queryClass.query();
             result.keySet().forEach(name -> charts.addCharts(name, result.get(name)));
-
         } catch (Exception e) {
             e.printStackTrace();
-            logger.info("Query " + queryClass.getClass() +"  failed with: " + e.getMessage());
+            logger.error("Query " + queryClass.getClass() +"  failed with: " + e.getMessage());
 
             // logger.error("Could not load file", e);
             // logger.error("Query '{}' failed with: {}", queryClass.getClass(), e);

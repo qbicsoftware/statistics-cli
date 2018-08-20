@@ -5,6 +5,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.exceptions.InvalidProjectCodeException;
 import life.qbic.io.queries.utils.Helpers;
 import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
@@ -49,7 +50,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
         clear();
 
         retrieveDataFromOpenBis();
-        //removeBlacklistedSpaces();//TODO comment this back in
+        removeBlacklistedSpaces();//TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
 
         createProjectcodeTypeMap();
@@ -58,13 +59,13 @@ public class ProjectsTechnologiesQuery extends AQuery {
         Map<String, ChartConfig> map = new HashMap<>();
 
         Map<String, Object> mTemp = new HashMap<>();
-        for(Set<String> set : multiOmicsCount.keySet()){
+        for (Set<String> set : multiOmicsCount.keySet()) {
             ArrayList<String> list = new ArrayList<>(set);
             String name = "";
-            for(int i = 0; i < set.size()-1; i++){
+            for (int i = 0; i < set.size() - 1; i++) {
                 name = name.concat(Translator.getTranslation(list.get(i))).concat(" + ");
             }
-            name = name.concat(Translator.getTranslation(list.get(list.size()-1)));
+            name = name.concat(Translator.getTranslation(list.get(list.size() - 1)));
             mTemp.put(name, multiOmicsCount.get(set));
         }
 
@@ -105,52 +106,61 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
     }
 
-    private void createProjectcodeTypeMap(){
+    private void createProjectcodeTypeMap() {
         searchResult.getObjects().forEach(sample -> {
 
             Set<String> omicsType = new HashSet<>();
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length-1].equals("RUN")) {
-                    omicsType.add(c.getType().toString().replace("SampleType ",""));
+                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length - 1].equals("RUN")) {
+                    omicsType.add(c.getType().toString().replace("SampleType ", ""));
                 }
             });
 
-            if(sample.getCode().length() > 5) {
-                String projectCode = sample.getCode().substring(0, 5);
-                if(projectCodeToType.containsKey(projectCode)){
-                    omicsType.addAll(projectCodeToType.get(projectCode));
-                }
-                projectCodeToType.put(projectCode, omicsType);
-            }else{
+            try{
+                matchProjectCodeToType(sample.getCode(), omicsType);
+            }catch(InvalidProjectCodeException e){
+                logger.error("Query " + this.getClass() + ":" + e.getMessage());
 
-                //TODO throw exception about unvalid code
-                System.out.println(sample.getCode());
             }
+
+
 
         });
 
     }
 
-    private void countProjectsByType(){
+    private void matchProjectCodeToType(String code, Set<String> omicsType) throws InvalidProjectCodeException{
+        if (code.length() > 5) {
+            String projectCode = code.substring(0, 5);
+            if (projectCodeToType.containsKey(projectCode)) {
+                omicsType.addAll(projectCodeToType.get(projectCode));
+            }
+            projectCodeToType.put(projectCode, omicsType);
+        } else {
+            throw new InvalidProjectCodeException("Sample code is too short: " + code + ". At least 5 characters are expected in order to comply with sample code pattern of " +
+                    "<projectcode>.concat(<sampleidentifier>).");
+        }
+    }
 
-        projectCodeToType.keySet().forEach(projectCode ->{
-            if(projectCodeToType.get(projectCode).size() > 1){
+    private void countProjectsByType() {
+
+        projectCodeToType.keySet().forEach(projectCode -> {
+            if (projectCodeToType.get(projectCode).size() > 1) {
 
                 Helpers.addEntryToStringCountMap(resultsProjectCounts, Other.Multi_omics.toString(), 1);
 
                 Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);
 
-            }else if (projectCodeToType.get(projectCode).size() == 1){
+            } else if (projectCodeToType.get(projectCode).size() == 1) {
                 Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);
             }
             //else{
-                //If unknown ignore
+            //If unknown ignore
             //}
         });
     }
-
 
 
 //    private boolean isOmicsRun(String name) {
