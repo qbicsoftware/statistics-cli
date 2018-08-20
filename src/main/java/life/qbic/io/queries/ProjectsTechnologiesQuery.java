@@ -124,9 +124,6 @@ public class ProjectsTechnologiesQuery extends AQuery {
                 logger.error("Query " + this.getClass() + ":" + e.getMessage());
 
             }
-
-
-
         });
 
     }
@@ -149,7 +146,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
         projectCodeToType.keySet().forEach(projectCode -> {
             if (projectCodeToType.get(projectCode).size() > 1) {
 
-                Helpers.addEntryToStringCountMap(resultsProjectCounts, Other.Multi_omics.toString(), 1);
+                Helpers.addEntryToStringCountMap(resultsProjectCounts, Translator.Multi_omics.getOriginal(), 1);
 
                 Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);
 
@@ -172,6 +169,4 @@ public class ProjectsTechnologiesQuery extends AQuery {
 //        return name.split("_")[1];
 //    }
 //
-
-
 }
