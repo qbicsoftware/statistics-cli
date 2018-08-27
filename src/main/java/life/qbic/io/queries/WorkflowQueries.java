@@ -206,7 +206,6 @@ public class WorkflowQueries extends AQuery {
             String[] arr = o.getType().toString().split("_");
             if(arr.length > 1) {
                 if (arr[1].equals("WF")) {
-                    System.out.println(arr[2]);
                     Helpers.addEntryToStringCountMap(workflowTypeCountResult, arr[2], 1);
                 }
             }
