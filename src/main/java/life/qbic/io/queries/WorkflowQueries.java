@@ -65,7 +65,10 @@ public class WorkflowQueries extends AQuery {
 
         logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();
+        //removeBlacklistedSpaces();
+        //TODO comment this back in
+        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+
         countWorkflowExecutionCounts();
 
         logger.info("Get available QBiC workflows from GitHub via API");
@@ -78,11 +81,12 @@ public class WorkflowQueries extends AQuery {
         //Add this LAST!
         sortAvailableWorkflowsByType("other");
 
+
         logger.info("Set results");
         workflows.keySet().forEach(type ->
                 result.put(ChartNames.Available_Workflows_.toString().concat(type.toUpperCase()), customizeChartConfig(workflows.get(type), type.toUpperCase())));
 
-        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow Execution Counts", "Workflow"));
+        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.addPercentages(Helpers.generateChartConfig(workflowTypeCountResult, "Counts", "Workflow Execution Counts", "Workflow")));
 
         return result;
     }
@@ -177,7 +181,7 @@ public class WorkflowQueries extends AQuery {
                 if(listOne.size() == 0){
                     Helpers.addEntryToStringListMap(workflows, type, (LinkedTreeMap)id);
                 }
-                listOne.forEach(l ->{
+                listOne.forEach(l -> {
                     Helpers.addEntryToStringListMap(workflows, type.concat("_").concat(l), (LinkedTreeMap)id);
                 });
                 removables.add(id);
@@ -201,8 +205,8 @@ public class WorkflowQueries extends AQuery {
         searchResult.getObjects().forEach(o ->{
             String[] arr = o.getType().toString().split("_");
             if(arr.length > 1) {
-                //TODO issue when clicking on the chart due to naming: fix that
                 if (arr[1].equals("WF")) {
+                    System.out.println(arr[2]);
                     Helpers.addEntryToStringCountMap(workflowTypeCountResult, arr[2], 1);
                 }
             }

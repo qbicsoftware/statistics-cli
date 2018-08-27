@@ -1,7 +1,6 @@
 package life.qbic.controller;
 
 import life.qbic.cli.MainCommand;
-import life.qbic.exceptions.InvalidProjectCodeException;
 import life.qbic.io.queries.*;
 import life.qbic.io.webservice.OpenBisAccess;
 import life.qbic.io.writer.YAMLWriter;
@@ -65,10 +64,10 @@ public class MainController {
      */
     private void queryAll() {
 
-       //query(organismCountQuery);
-       //query(availablePipelinesQuery); //TODO handle timeout exception
+       query(organismCountQuery);
+       query(availablePipelinesQuery); //TODO handle timeout exception
        query(projectsTechnologiesQuery);
-       //query(sampleTypeQuery);
+       query(sampleTypeQuery);
 
         //TODO 3: Add your query call here
 

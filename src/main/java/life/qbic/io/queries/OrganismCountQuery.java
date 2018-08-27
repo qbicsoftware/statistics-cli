@@ -77,7 +77,8 @@ public class OrganismCountQuery extends AQuery {
 
         logger.info("Count OpenBis samples on species basis.");
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();
+        //removeBlacklistedSpaces();//TODO comment this back in
+        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
         countSamplesPerOrganism();
 
         logger.info("Map species to domain and genus");
@@ -112,14 +113,14 @@ public class OrganismCountQuery extends AQuery {
         largeDomains.forEach(largeDomain ->{
             domainCountMap.remove(largeDomain);
         });
-        result.put("SuperKingdom", addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain", "Organisms")));
+        result.put("SuperKingdom", Helpers.addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain", "Organisms")));
 
         //Add Genus maps to config
         genusCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Genus"), addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain), "Organisms"))));
+                result.put(domain.concat("_Genus"), Helpers.addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain), "Organisms"))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Species"), addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "", "Organisms"))));
+                result.put(domain.concat("_Species"), Helpers.addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "", "Organisms"))));
 
         //Add species to genus map
         result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), "", "Organisms"));
@@ -279,28 +280,7 @@ public class OrganismCountQuery extends AQuery {
         );
     }
 
-    private ChartConfig addPercentages(ChartConfig chartConfig){
-        int totalCount = 0;
-        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[chartConfig.getData().keySet().size()]);
-        String[] keySet = Arrays.asList(objectArray).toArray(new String[objectArray.length]);
 
-        //Compute total count
-        for (String aKeySet : keySet) {
-            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
-                totalCount += (int)chartConfig.getData().get(aKeySet).get(i);
-            }
-        }
-
-        //Compute percentage and round to one decimal position
-        List<Double> yCategories = new ArrayList<>();
-        for (String aKeySet : keySet) {
-            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
-                yCategories.add( Math.round(10.0 * (100.0 * (double) ((int)chartConfig.getData().get(aKeySet).get(i))/(double) ((int)totalCount)))/ 10.0);
-            }
-        }
-        chartConfig.getSettings().setyCategories(new ArrayList<>(yCategories));
-        return chartConfig;
-    }
 
 
 }
