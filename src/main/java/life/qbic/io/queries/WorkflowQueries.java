@@ -33,13 +33,12 @@ public class WorkflowQueries extends AQuery {
 
     private static final Logger logger = LogManager.getLogger(WorkflowQueries.class);
 
-    //TODO: Maybe move these to config, in case they change over time
-    private static final String GITHUB_Url = "https://api.github.com/orgs/qbicsoftware/repos";
-    private static final String HEADER_KEY = "Accept";
-    private static final String HEADER_VALUE = "application/vnd.github.mercy-preview+json";
-
     private final IApplicationServerApi v3;
     private final String sessionToken;
+    private final String githubUrl;
+    private final String headerKey;
+    private final String headerValue;
+    private final int maxNumRepos;
 
     private final List<LinkedTreeMap> allGithubWorkflows = new ArrayList<>();
 
@@ -51,9 +50,14 @@ public class WorkflowQueries extends AQuery {
 
     private SearchResult<Sample> searchResult;
 
-    public WorkflowQueries(IApplicationServerApi v3, String sessionToken) {
+    public WorkflowQueries(IApplicationServerApi v3, String sessionToken, String gitHubUrl, String gitHubHeaderKey,
+                           String gitHubHeaderValue, int maxNumRepos) {
         this.v3 = v3;
         this.sessionToken = sessionToken;
+        this.githubUrl = gitHubUrl;
+        this.headerKey = gitHubHeaderKey;
+        this.headerValue = gitHubHeaderValue;
+        this.maxNumRepos = maxNumRepos;
     }
 
     public Map<String, ChartConfig> query() {
@@ -126,33 +130,31 @@ public class WorkflowQueries extends AQuery {
         return chartConfig;
     }
 
-    private void getAvailableWorkflows() {
+    private void getAvailableWorkflows() throws RuntimeException{
         int page_counter = 1; //GitHub API does not support pagination right now, 100 results can be displayed at once
         // at most, so we have to access all pages by hand
 
-        String line = "";
-        while (!"[]".equals(line)) { // no results are shown with [] (empty page sign)from API
+        String line = " ";
+        while (line != null && !line.contains("[]")) { // no results are shown with [] (empty page sign)from API
             try (BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(REST.call(GITHUB_Url.concat("?page=".concat(String.valueOf(page_counter))
+                    new InputStreamReader(REST.call(githubUrl.concat("?page=".concat(String.valueOf(page_counter))
                                     .concat("&per_page=100")),
-                            HEADER_KEY,
-                            HEADER_VALUE)))) {
+                            headerKey,
+                            headerValue)))) {
+
 
                 while ((line = rd.readLine()) != null && !"[]".equals(line)) {
                     retrieveIfWorkflow(line);
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
                 logger.error("Access of GitHub via API failed with: " + e.getMessage());
             }
             //Access next 100 results
             page_counter++;
 
-            //TODO find some sort of safety net here
-            if (page_counter > 5) {
-                logger.error("GIT CALL ERROR");
-                break;
+            if (page_counter > maxNumRepos/100 + 1) { //page counter is 1-based, so add 1.
+                throw new RuntimeException("GitHub access exception. Query attempts to retrieve more repos than allowed by maxNumRepos.");
             }
         }
     }

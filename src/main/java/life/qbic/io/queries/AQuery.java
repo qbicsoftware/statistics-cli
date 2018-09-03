@@ -11,9 +11,7 @@ import java.util.Map;
  */
 public abstract class AQuery{
 
-    //TODO maybe add opebis credentials ere again since everyone is using them
     abstract public  Map<String, ChartConfig> query();
-
 
     //This kills the efficiency a bit because downloaded open bis data as to be iterate twice. However,
     // it should serve as a reminder to not count results from blacklisted spaces, which IMO is more important.

@@ -35,12 +35,10 @@ public class OrganismCountQuery extends AQuery {
 
     private static final Logger logger = LogManager.getLogger(OrganismCountQuery.class);
 
-    //TODO this should go into a config
-    private final String NCBI_TAXONOMY_REST_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=";
-    private final double THRESHOLD = 25.0; //threshold for when a fraction of species in a kingdom counts as large
-
     private final IApplicationServerApi v3;
     private final String sessionToken;
+    private final String ncbiTaxonomyRestUrl;
+    private final double threshold; //threshold for when a fraction of species in a kingdom counts as large
 
     private  SearchResult<Sample> searchResult;
 
@@ -60,10 +58,12 @@ public class OrganismCountQuery extends AQuery {
 
     private final Map<String, Object> organismNameGenusMap = new HashMap<>(); //Cavia aperea=Cavia [Species name = Genus]
 
-    public OrganismCountQuery(IApplicationServerApi v3, String sessionToken) {
+    public OrganismCountQuery(IApplicationServerApi v3, String sessionToken, String ncbiTaxUrl, double domainThreshold) {
 
         this.v3 = v3;
         this.sessionToken = sessionToken;
+        this.ncbiTaxonomyRestUrl = ncbiTaxUrl;
+        this.threshold = domainThreshold;
     }
 
     public Map<String, ChartConfig> query() {
@@ -87,7 +87,7 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Count samples on domain basis");
         generateDomainCountMap();
 
-        logger.info("Retrieve species with a larger share than " + THRESHOLD + " in their domain.");
+        logger.info("Retrieve species with a larger share than " + threshold + " in their domain.");
         filterForLargeOrganisms();
 
         domainCountMap.keySet().forEach(domain -> {
@@ -117,7 +117,7 @@ public class OrganismCountQuery extends AQuery {
 
         //Add Genus maps to config
         genusCountMaps.keySet().forEach(domain ->
-                result.put(domain.concat("_Genus"), Helpers.addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count Other".concat(domain), "Organisms"))));
+                result.put(domain.concat("_Genus"), Helpers.addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, "Sample Count ".concat(domain), "Organisms"))));
         //Add Species to config
         speciesCountMaps.keySet().forEach(domain ->
                 result.put(domain.concat("_Species"), Helpers.addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, "", "Organisms"))));
@@ -184,8 +184,9 @@ public class OrganismCountQuery extends AQuery {
         });
     }
 
+    //FIXME: Check with Andreas when the new XML format is implemented
     private void retrieveSuperKingdomAndGenusFromNCBI(String organism) {
-        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(NCBI_TAXONOMY_REST_URL.concat(organism).concat("&retmode=xml")))))) {
+        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(ncbiTaxonomyRestUrl.concat(organism).concat("&retmode=xml")))))) {
             String line;
             String scientificName = "";
             while ((line = rd.readLine()) != null) {
@@ -231,7 +232,7 @@ public class OrganismCountQuery extends AQuery {
 
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
-            if (perc > THRESHOLD && perc < 100.0) {
+            if (perc > threshold && perc < 100.0) {
                 largeSpecies.add(o);
                 int currCount = (int) domainCountMap.get(organismDomainMap.get(o));
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));

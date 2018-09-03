@@ -31,20 +31,22 @@ public class MainController {
     private final AQuery projectsTechnologiesQuery;
     private final AQuery sampleTypeQuery;
 
-    public MainController(MainCommand openBisCredentials) {
+    public MainController(MainCommand command) {
         logger.info("Establish access to OpenBis");
 
-        this.openBisAccess = new OpenBisAccess(openBisCredentials.getOpenBISUrl(),
-                openBisCredentials.getOpenBISUsername(),
-                openBisCredentials.getOpenBISPassword());
+        this.openBisAccess = new OpenBisAccess(command.openBISUrl,
+                command.openBISUsername,
+                command.openBISPassword);
 
-        this.outputFilename = openBisCredentials.getOutputFileName();
+        this.outputFilename = command.outputFileName;
 
         this.charts = new MainConfig();
 
         //init query classes
-        organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
-        availablePipelinesQuery = new WorkflowQueries(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
+        organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken(),
+                command.ncbiTaxUrl, command.domainThreshold);
+        availablePipelinesQuery = new WorkflowQueries(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken(),
+                command.gitHubUrl, command.gitHubHeaderKey, command.gitHubHeaderValue, command.maxNumRepos);
         projectsTechnologiesQuery = new ProjectsTechnologiesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
         sampleTypeQuery = new SampleTypeQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());
 
@@ -65,7 +67,7 @@ public class MainController {
     private void queryAll() {
 
        query(organismCountQuery);
-       query(availablePipelinesQuery); //TODO handle timeout exception
+       query(availablePipelinesQuery);
        query(projectsTechnologiesQuery);
        query(sampleTypeQuery);
 
@@ -79,11 +81,9 @@ public class MainController {
             Map<String, ChartConfig> result = queryClass.query();
             result.keySet().forEach(name -> charts.addCharts(name, result.get(name)));
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("Query " + queryClass.getClass() +"  failed with: " + e.getMessage());
+            logger.error(e.getStackTrace());
 
-            // logger.error("Could not load file", e);
-            // logger.error("Query '{}' failed with: {}", queryClass.getClass(), e);
         }
     }
 
