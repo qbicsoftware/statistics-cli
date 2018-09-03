@@ -69,7 +69,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
             mTemp.put(name, multiOmicsCount.get(set));
         }
 
-        map.put(ChartNames.Projects.toString(), Helpers.generateChartConfig(resultsProjectCounts, "project", "Project Counts with Measured Samples", "Projects"));
+        map.put(ChartNames.Projects.toString(), Helpers.addPercentages(Helpers.generateChartConfig(resultsProjectCounts, "project", "Project Counts with Measured Samples", "Projects")));
         map.put(ChartNames.Project_Multi_omics.toString(), Helpers.generateChartConfig(mTemp, "multiomics", "Multiomics count", "Projects"));
 
         return map;
@@ -113,7 +113,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length - 1].equals("RUN")) {
+                if (isOmicsRun(c.getType().toString())) {
                     omicsType.add(c.getType().toString().replace("SampleType ", ""));
                 }
             });
@@ -122,6 +122,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
                 matchProjectCodeToType(sample.getCode(), omicsType);
             }catch(InvalidProjectCodeException e){
                 logger.error("Query " + this.getClass() + ":" + e.getMessage());
+                logger.error(e.getStackTrace());
 
             }
         });
@@ -160,13 +161,10 @@ public class ProjectsTechnologiesQuery extends AQuery {
     }
 
 
-//    private boolean isOmicsRun(String name) {
-//        String[] array = name.split("_");
-//        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
-//    }
-//
-//    private String getOmicsName(String name) {
-//        return name.split("_")[1];
-//    }
-//
+    private boolean isOmicsRun(String name) {
+        String[] array = name.split("_");
+        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
+    }
+
+
 }

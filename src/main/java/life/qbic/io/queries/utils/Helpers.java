@@ -98,6 +98,29 @@ public final class Helpers {
         return chartConfig;
     }
 
+    public static ChartConfig addPercentages(ChartConfig chartConfig){
+        int totalCount = 0;
+        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[0]);
+        String[] keySet = Arrays.asList(objectArray).toArray(new String[objectArray.length]);
+
+        //Compute total count
+        for (String aKeySet : keySet) {
+            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
+                totalCount += (int)chartConfig.getData().get(aKeySet).get(i);
+            }
+        }
+
+        //Compute percentage and round to one decimal position
+        List<Double> yCategories = new ArrayList<>();
+        for (String aKeySet : keySet) {
+            for (int i = 0; i < chartConfig.getData().get(aKeySet).size(); i++) {
+                yCategories.add( Math.round(10.0 * (100.0 * (double) ((int)chartConfig.getData().get(aKeySet).get(i))/(double) ((int)totalCount)))/ 10.0);
+            }
+        }
+        chartConfig.getSettings().setyCategories(new ArrayList<>(yCategories));
+        return chartConfig;
+    }
+
 
 
 }

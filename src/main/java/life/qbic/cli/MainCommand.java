@@ -7,35 +7,41 @@ import picocli.CommandLine.Option;
  * Abstraction of command-line arguments that will be passed to {@link MainTool} at construction time.
  */
 @Command(
-   name="Statistics-CLI",
-   description="This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.")
+        name = "Statistics-CLI",
+        description = "This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.")
 public class MainCommand extends AbstractCommand {
-    // TODO: add your command-line options as members of this class using picocli's annotations, for instance:
-    @Option(names = {"-url"}, description = "OpenBIS URL to access", required = true)
-    private String openBISUrl;
+    //TODO: add your command-line options as members of this class using picocli's annotations, for instance:
+    @Option(names = {"-openBisUrl"}, description = "OpenBIS URL to access", required = true)
+    public String openBISUrl;
 
-    @Option(names = {"-u", "--user"}, description = "OpenBIS access username", required = true)
-    private String openBISUsername;
+    @Option(names = {"-user"}, description = "OpenBIS access username", required = true)
+    public String openBISUsername;
 
-    @Option(names = {"-p", "--password"}, description = "OpenBIS login password", required = true)
-    private String openBISPassword;
+    @Option(names = {"-password"}, description = "OpenBIS login password", required = true)
+    public String openBISPassword;
 
-    @Option(names = {"-o", "--outputFile"}, description = "Name of the output file", required = true) //I guess this isn't mandatory? we could provide a default option
-    private String outputFileName;
+    @Option(names = {"-outputFile"}, description = "Name of the output file", required = true)
+    //I guess this isn't mandatory? we could provide a default option
+    public String outputFileName;
 
-    public String getOpenBISUrl() {
-        return openBISUrl;
-    }
+    @Option(names = {"-ncbiTaxUrl"}, description = "REST Link to NCBI Taxonomy DB", required = true)
+    public String ncbiTaxUrl;
 
-    public String getOpenBISUsername() {
-        return openBISUsername;
-    }
+    @Option(names = {"-domainThreshold"}, description = "Threshold in percent of when a species is displayed among the " +
+            "domains (Eukaryota, Bacteria,...) and not in a domain subchart (Eukaryota: Mus musculus,...).", required = true)
+    public double domainThreshold;
 
-    public String getOpenBISPassword() {
-        return openBISPassword;
-    }
+    @Option(names = {"-gitHubUrl"}, description = "GitHub link to organization containing workflow repos", required = true)
+    public String gitHubUrl;
 
-    public String getOutputFileName() {
-        return outputFileName;
-    }
+    //Header parameters are required because the API for repos access is still under development
+    @Option(names = {"-gitHubHeaderKey"}, description = "GitHub link header key", required = true)
+    public String gitHubHeaderKey;
+
+    @Option(names = {"-gitHubHeaderValue"}, description = "GitHub link header value", required = true)
+    public String gitHubHeaderValue;
+
+    @Option(names = {"-maxNumRepos"}, description = "Maximum of repos in the given organization that are searched for workflow tags." +
+            "This is just to be extra safe that the retrieval loop is not executed infinitely in case the empty page signature of GitHub API changes.", required = true)
+    public int maxNumRepos;
 }

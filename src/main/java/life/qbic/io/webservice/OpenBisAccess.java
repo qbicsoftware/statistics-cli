@@ -14,7 +14,7 @@ public class OpenBisAccess {
     private static final Logger logger = LogManager.getLogger(OpenBisAccess.class);
 
     private final String URL;
-    private final int TIMEOUT = 10000;
+    private final int TIMEOUT = 100000;
     private final IApplicationServerApi v3;
     private final String user;
     private final String password;

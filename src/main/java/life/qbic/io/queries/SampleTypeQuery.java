@@ -76,8 +76,7 @@ public class SampleTypeQuery extends AQuery {
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (!c.getType().toString().split("_")[1].equals("WF") && c.getType().toString().split("_")[c.getType().toString().split("_").length-1].equals("RUN")) {
-                    //TODO reactivate the methods here
+                if (isOmicsRun(c.getType().toString())) {
                     omicsType.add(c.getType().toString().replace("SampleType ",""));
                 }
             });
@@ -131,6 +130,11 @@ public class SampleTypeQuery extends AQuery {
 
         searchResult =  v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);
 
+    }
+
+    private boolean isOmicsRun(String name) {
+        String[] array = name.split("_");
+        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
     }
 
 
