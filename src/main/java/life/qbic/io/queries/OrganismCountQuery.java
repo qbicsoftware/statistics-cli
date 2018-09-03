@@ -77,7 +77,7 @@ public class OrganismCountQuery extends AQuery {
 
         logger.info("Count OpenBis samples on species basis.");
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces();//TODO comment this back in
+        removeBlacklistedSpaces();//TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
         countSamplesPerOrganism();
 
@@ -236,7 +236,7 @@ public class OrganismCountQuery extends AQuery {
 
                 int currcount = 0;
                 if(subtractionMap.containsKey(organismDomainMap.get(o))) {
-                    currcount = (int) subtractionMap.get(organismDomainMap.get(o));
+                    currcount = subtractionMap.get(organismDomainMap.get(o));
                 }
                 subtractionMap.put(organismDomainMap.get(o), currcount + organismCountMap.get(o));
                 largeDomains.add(organismDomainMap.get(o));

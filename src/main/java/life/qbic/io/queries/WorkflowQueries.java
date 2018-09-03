@@ -69,7 +69,7 @@ public class WorkflowQueries extends AQuery {
 
         logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces();
+        removeBlacklistedSpaces();
         //TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
 
