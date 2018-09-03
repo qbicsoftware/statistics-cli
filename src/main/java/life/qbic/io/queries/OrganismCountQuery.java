@@ -77,7 +77,7 @@ public class OrganismCountQuery extends AQuery {
 
         logger.info("Count OpenBis samples on species basis.");
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces();//TODO comment this back in
+        removeBlacklistedSpaces();//TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
         countSamplesPerOrganism();
 
@@ -107,12 +107,8 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Set results.");
 
         //Add Superkingdom to config
-        largeDomains.forEach(largeDomain ->{
-            domainCountMap.put("Other ".concat(largeDomain), domainCountMap.get(largeDomain));
-        });
-        largeDomains.forEach(largeDomain ->{
-            domainCountMap.remove(largeDomain);
-        });
+        largeDomains.forEach(largeDomain -> domainCountMap.put("Other ".concat(largeDomain), domainCountMap.get(largeDomain)));
+        largeDomains.forEach(domainCountMap::remove);
         result.put("SuperKingdom", Helpers.addPercentages( Helpers.generateChartConfig(domainCountMap, "SuperKingdom", "Sample Count by Domain", "Organisms")));
 
         //Add Genus maps to config
@@ -168,10 +164,7 @@ public class OrganismCountQuery extends AQuery {
 
     private void countSamplesPerOrganism() {
         //Iterate over all search results
-        searchResult.getObjects().forEach(experiment -> {
-            Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1);
-
-        });
+        searchResult.getObjects().forEach(experiment -> Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1));
     }
 
     private void setOrganismToDomainAndGenusMap() {

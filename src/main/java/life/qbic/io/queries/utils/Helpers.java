@@ -100,7 +100,7 @@ public final class Helpers {
 
     public static ChartConfig addPercentages(ChartConfig chartConfig){
         int totalCount = 0;
-        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[chartConfig.getData().keySet().size()]);
+        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[0]);
         String[] keySet = Arrays.asList(objectArray).toArray(new String[objectArray.length]);
 
         //Compute total count

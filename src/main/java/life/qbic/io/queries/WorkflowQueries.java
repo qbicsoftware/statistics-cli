@@ -69,7 +69,7 @@ public class WorkflowQueries extends AQuery {
 
         logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces();
+        removeBlacklistedSpaces();
         //TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
 
@@ -79,9 +79,7 @@ public class WorkflowQueries extends AQuery {
         getAvailableWorkflows();
 
         logger.info("Sort workflows by type");
-        workflowTypeCountResult.keySet().forEach(type -> {
-            sortAvailableWorkflowsByType(type.toLowerCase());
-        });
+        workflowTypeCountResult.keySet().forEach(type -> sortAvailableWorkflowsByType(type.toLowerCase()));
         //Add this LAST!
         sortAvailableWorkflowsByType("other");
 
@@ -181,11 +179,9 @@ public class WorkflowQueries extends AQuery {
                          WorkflowSubtypes.getList());
 
                 if(listOne.size() == 0){
-                    Helpers.addEntryToStringListMap(workflows, type, (LinkedTreeMap)id);
+                    Helpers.addEntryToStringListMap(workflows, type, id);
                 }
-                listOne.forEach(l -> {
-                    Helpers.addEntryToStringListMap(workflows, type.concat("_").concat(l), (LinkedTreeMap)id);
-                });
+                listOne.forEach(l -> Helpers.addEntryToStringListMap(workflows, type.concat("_").concat(l), (LinkedTreeMap)id));
                 removables.add(id);
             }
         });

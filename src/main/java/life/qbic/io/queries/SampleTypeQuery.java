@@ -44,7 +44,7 @@ public class SampleTypeQuery extends AQuery {
         clear();
 
         retrieveSamplesFromOpenBis();
-        //removeBlacklistedSpaces(); //TODO comment this back in
+        removeBlacklistedSpaces(); //TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
 
         countSampleTypes();
