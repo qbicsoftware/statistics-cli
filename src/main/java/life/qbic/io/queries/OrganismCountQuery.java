@@ -77,7 +77,7 @@ public class OrganismCountQuery extends AQuery {
 
         logger.info("Count OpenBis samples on species basis.");
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();//TODO comment this back in
+        //removeBlacklistedSpaces();//TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
         countSamplesPerOrganism();
 
@@ -223,16 +223,30 @@ public class OrganismCountQuery extends AQuery {
 
     private void filterForLargeOrganisms() {
 
+        System.out.println(domainCountMap);
+
+        final Map<String, Integer> subtractionMap = new HashMap<>();
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
+            System.out.println(o + " " + organismCountMap.get(o) + " " + organismDomainMap.get(o) + " " +domainCountMap.get(organismDomainMap.get(o)) + " " + perc);
             if (perc > threshold && perc < 100.0) {
                 largeSpecies.add(o);
-                int currCount = (int) domainCountMap.get(organismDomainMap.get(o));
+
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));
-                domainCountMap.put(organismDomainMap.get(o), currCount - organismCountMap.get(o));
+
+                int currcount = 0;
+                if(subtractionMap.containsKey(organismDomainMap.get(o))) {
+                    currcount = (int) subtractionMap.get(organismDomainMap.get(o));
+                }
+                subtractionMap.put(organismDomainMap.get(o), currcount + organismCountMap.get(o));
                 largeDomains.add(organismDomainMap.get(o));
             }
 
+        });
+
+        subtractionMap.keySet().forEach(key ->{
+            int currCount = (int) domainCountMap.get(key);
+            domainCountMap.put(key, currCount - subtractionMap.get(key));
         });
 
     }
