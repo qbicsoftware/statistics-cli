@@ -61,11 +61,11 @@ public final class Helpers {
      * You somehow need to ensure that your data order matches the category order (here xCategories holds the names, data
      * holds the respective values, the need to be in the correct order to allow matching later!)
      *
-     * Most common: xcategories and data: so this is used here, anytng else has to be added to the returned chartconfig
+     * Most common: xcategories and data: so this is used here, anything else has to be added to the returned chartconfig
      * @param result Map holding categories as key, and the respective values as values
-     * @param name
+     * @param name name in mainconfig, should be unique to all others
      * @param chartTitle  Chart title, stored in config and later displayed
-     * @param tabTitle
+     * @param tabTitle Title displayed in tab header
      * @return ChartConfig
      */
     public static ChartConfig generateChartConfig(Map<String, Object> result, String name, String chartTitle, String tabTitle) {
@@ -98,6 +98,14 @@ public final class Helpers {
         return chartConfig;
     }
 
+
+    /**
+     * This method adds the percentages as yCategories to a given chartconfig. This means it takes each value from
+     * the xCategories and computes its percentage to the total sum. The respective percentage can then be
+     * found at the same position in the yCategories.
+     * @param chartConfig
+     * @return
+     */
     public static ChartConfig addPercentages(ChartConfig chartConfig){
         int totalCount = 0;
         Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[0]);

@@ -2,7 +2,7 @@ package life.qbic.io.queries.utils.lexica;
 
 /**
  * @author fhanssen
- * This enum class holds the OpenBis terminology used at QBiC. As it may not always be obvious how it is named, this enum was created.
+ * This enum class holds the OpenBis terminology used at QBiC. Since it may not always be obvious how it is named, this enum was created.
  */
 public enum OpenBisTerminology {
     NCBI_ORGANISM("Q_NCBI_ORGANISM"),

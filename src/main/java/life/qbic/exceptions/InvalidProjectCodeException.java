@@ -1,7 +1,9 @@
 package life.qbic.exceptions;
 
-import java.io.IOException;
 
+/**
+ * @author fhanssen
+ */
 public class InvalidProjectCodeException extends RuntimeException {
 
     public InvalidProjectCodeException(String message) {

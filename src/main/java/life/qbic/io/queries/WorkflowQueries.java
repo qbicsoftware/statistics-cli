@@ -60,6 +60,32 @@ public class WorkflowQueries extends AQuery {
         this.maxNumRepos = maxNumRepos;
     }
 
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples: this will also contain the workflows now
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Count everything of type workflow and group by type
+     * 4. Get all available workflow repos from our GitHub organization (That is all repos that have the topic tag 'workflow')
+     * 5. Each retrieved repo has some more tags describing for what it is used such RNA, DNA, Lipidomics etc.
+     *    Map the repos to each type from step 3: such as DNA/RNA -> NGS
+     *    Additionally the star gazer count is retrieved.
+     * @return Map of generate configs is returned: Workflowtype (NGS, MA, MS) -> count, Set of available workflow configs: e.g.:
+     * Available_Workflows_MA_RNA:
+     *     data:
+     *       stargazers_count:
+     *       - 1.0
+     *     settings:
+     *       subtitle: null
+     *       tabTitle: Workflow
+     *       title: Available Workflows MA_RNA
+     *       xAxisTitle: null
+     *       xCategories:
+     *       - https://api.github.com/repos/qbicsoftware/qbic-wf-microarrayQC
+     *       yAxisTitle: null
+     *       yCategories:
+     *       - Microarray QC workflow mainly using the R package oligo
+     */
+    @Override
     public Map<String, ChartConfig> query() {
 
         logger.info("Run workflow query");
@@ -69,9 +95,10 @@ public class WorkflowQueries extends AQuery {
 
         logger.info("Count number of times workflows have been executed via OpenBis and summarize it by types.");
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();
+
         //TODO comment this back in
-        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+        removeBlacklistedSpaces();
 
         countWorkflowExecutionCounts();
 

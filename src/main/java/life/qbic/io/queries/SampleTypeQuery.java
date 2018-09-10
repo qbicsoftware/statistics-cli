@@ -36,6 +36,26 @@ public class SampleTypeQuery extends AQuery {
         this.sessionToken = sessionToken;
     }
 
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples of type Q_TEST_SAMPLE
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Count samples by origin (RNA, DNA, etc.)
+     * 4. Count each sample origin by technology (DNA: x NGS, y MA etc.)
+     * 6. Format data and add to config
+     * @return Map of generate configs is returned: Data: lists of sample type count per technology, xCategories: technology
+     *  e.g. data:  - PEPTIDES: 39
+     *                DNA: 1
+     *                PROTEINS: 13
+     *              - RNA: 17
+     *                PROTEINS: 3
+     *              - RNA: 1
+     *xCategories:  - Q_MS_RUN
+     *              - Q_MICROARRAY_RUN
+     *              - Multi-omics
+     *
+     *Meaning: Total of 16 protein samples: 13 generated with MS technology and 3  using micro arrays.
+     */
     @Override
     public Map<String, ChartConfig> query() {
 
@@ -44,8 +64,10 @@ public class SampleTypeQuery extends AQuery {
         clear();
 
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces(); //TODO comment this back in
+
+        //TODO comment this back in
         // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+        removeBlacklistedSpaces();
 
         countSampleTypes();
 

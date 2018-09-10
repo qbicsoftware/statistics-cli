@@ -42,6 +42,16 @@ public class ProjectsTechnologiesQuery extends AQuery {
     }
 
 
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples of type Q_TEST_SAMPLE
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Extract project code (first 5 chars of sample code) and map to its type: NGS, MA, MS
+     * 4. Count projects by type
+     * 5. For multi omics projects: get multiomics combination: e.g. NGS+MA etc
+     * 6. Format data and add to config
+     * @return Map of generate configs is returned: Type(MA, NGA, MS) -> Count, multi omics combination -> count
+     */
     @Override
     public Map<String, ChartConfig> query() {
 
@@ -50,14 +60,23 @@ public class ProjectsTechnologiesQuery extends AQuery {
         clear();
 
         retrieveDataFromOpenBis();
-        removeBlacklistedSpaces();//TODO comment this back in
-        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+
+        //TODO comment this back in
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+        removeBlacklistedSpaces();
 
         createProjectcodeTypeMap();
         countProjectsByType();
 
         Map<String, ChartConfig> map = new HashMap<>();
 
+        map.put(ChartNames.Projects.toString(), Helpers.addPercentages(Helpers.generateChartConfig(resultsProjectCounts, "project", "Project Counts with Measured Samples", "Projects")));
+        map.put(ChartNames.Project_Multi_omics.toString(), Helpers.generateChartConfig(countMultiOmicsCombinations(), "multiomics", "Multiomics count", "Projects"));
+
+        return map;
+    }
+
+    private Map<String, Object> countMultiOmicsCombinations() {
         Map<String, Object> mTemp = new HashMap<>();
         for (Set<String> set : multiOmicsCount.keySet()) {
             ArrayList<String> list = new ArrayList<>(set);
@@ -68,11 +87,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
             name = name.concat(Translator.getTranslation(list.get(list.size() - 1)));
             mTemp.put(name, multiOmicsCount.get(set));
         }
-
-        map.put(ChartNames.Projects.toString(), Helpers.addPercentages(Helpers.generateChartConfig(resultsProjectCounts, "project", "Project Counts with Measured Samples", "Projects")));
-        map.put(ChartNames.Project_Multi_omics.toString(), Helpers.generateChartConfig(mTemp, "multiomics", "Multiomics count", "Projects"));
-
-        return map;
+        return mTemp;
     }
 
     private void clear() {

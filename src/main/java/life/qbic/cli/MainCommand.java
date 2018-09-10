@@ -21,7 +21,6 @@ public class MainCommand extends AbstractCommand {
     public String openBISPassword;
 
     @Option(names = {"-outputFile"}, description = "Name of the output file", required = true)
-    //I guess this isn't mandatory? we could provide a default option
     public String outputFileName;
 
     @Option(names = {"-ncbiTaxUrl"}, description = "REST Link to NCBI Taxonomy DB", required = true)

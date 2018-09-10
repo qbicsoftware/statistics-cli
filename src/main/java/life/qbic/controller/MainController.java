@@ -62,7 +62,7 @@ public class MainController {
 
     /**
      * This method executes all queries. If new queries should be run, they need to be started from here. The resulting
-     * ChartConfigs need to be added to the MainConfig charts.
+     * ChartConfigs need to be added to the MainConfig object named 'charts'.
      */
     private void queryAll() {
 

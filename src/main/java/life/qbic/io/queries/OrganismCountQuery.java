@@ -66,6 +66,20 @@ public class OrganismCountQuery extends AQuery {
         this.threshold = domainThreshold;
     }
 
+    /**
+     * This query executes the following steps:
+     * 1. Retrieve all taxonomy IDs currently available in OpenBis and map IDs to names
+     * 2. Get all samples of type Q_BIOLOGICAL_ENTITY
+     * 3. Remove all samples belonging to spaces that have been blacklisted
+     * 4. Group the samples by their organism, aka count all mouse samples and so on. Samples are encoded with tax ID
+     * 5. Retrieve domain and genus from NCBI for each sample
+     * 6. Count samples by domain
+     * 7. Organisms that have a large share in their respective domain(> domainThreshold) are removed from organismCountMap
+     *    and added to domainCountMap
+     * 8. Map all samples, which are on species level, with their respective genus
+     * 9. Format data and add to config
+     * @return Map of generate configs is returned: DomainName -> Count, For each domain: SpeciesName -> Count, SpeciesName-> GenusName
+     */
     public Map<String, ChartConfig> query() {
 
         logger.info("Run organism count query");
@@ -77,8 +91,11 @@ public class OrganismCountQuery extends AQuery {
 
         logger.info("Count OpenBis samples on species basis.");
         retrieveSamplesFromOpenBis();
-        removeBlacklistedSpaces();//TODO comment this back in
-        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+
+        //TODO comment this back in
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+        removeBlacklistedSpaces();
+
         countSamplesPerOrganism();
 
         logger.info("Map species to domain and genus");
@@ -223,17 +240,13 @@ public class OrganismCountQuery extends AQuery {
 
     private void filterForLargeOrganisms() {
 
-        System.out.println(domainCountMap);
-
         final Map<String, Integer> subtractionMap = new HashMap<>();
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
-            System.out.println(o + " " + organismCountMap.get(o) + " " + organismDomainMap.get(o) + " " +domainCountMap.get(organismDomainMap.get(o)) + " " + perc);
             if (perc > threshold && perc < 100.0) {
                 largeSpecies.add(o);
 
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));
-
                 int currcount = 0;
                 if(subtractionMap.containsKey(organismDomainMap.get(o))) {
                     currcount = subtractionMap.get(organismDomainMap.get(o));
