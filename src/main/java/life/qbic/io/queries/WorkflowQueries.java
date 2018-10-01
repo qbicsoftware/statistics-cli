@@ -217,6 +217,7 @@ public class WorkflowQueries extends AQuery {
 
     private void retrieveSamplesFromOpenBis() {
         //Retrieve samples
+        //Use samples and not experiments here, because we need the space codes to remove blacklisted spaces. ExperimentFetchOptions don't return space code
         SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();
         SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();
         sampleFetchOptions.withType();

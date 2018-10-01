@@ -5,8 +5,9 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.datamodel.QbicPropertyType;
+import life.qbic.datamodel.samples.SampleType;
 import life.qbic.io.queries.utils.Helpers;
-import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,16 +99,16 @@ public class SampleTypeQuery extends AQuery {
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (isOmicsRun(c.getType().toString())) {
+                if (Helpers.isOmicsRun(c.getType().toString())) {
                     omicsType.add(c.getType().toString().replace("SampleType ",""));
                 }
             });
 
-            if(sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()).toUpperCase().contains("RNA")){
+            if(sample.getProperties().get(QbicPropertyType.Q_SAMPLE_TYPE.toString()).toUpperCase().contains("RNA")){
                 //TODO Lump all RNA together: Needs to be tested on big instance, since test instance only contains RNA
                 addSampleTechCount("RNA", omicsType);
             }else {
-                addSampleTechCount(sample.getProperties().get(OpenBisTerminology.SAMPLE_TYPE.toString()), omicsType);
+                addSampleTechCount(sample.getProperties().get(QbicPropertyType.Q_SAMPLE_TYPE.toString()), omicsType);
             }
         });
     }
@@ -142,7 +143,7 @@ public class SampleTypeQuery extends AQuery {
     private void retrieveSamplesFromOpenBis() {
 
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
-        sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.TEST_SAMPLE.toString());
+        sampleSourcesCriteria.withType().withCode().thatEquals(SampleType.Q_TEST_SAMPLE.toString());
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withProperties();
@@ -154,10 +155,7 @@ public class SampleTypeQuery extends AQuery {
 
     }
 
-    private boolean isOmicsRun(String name) {
-        String[] array = name.split("_");
-        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
-    }
+
 
 
 }

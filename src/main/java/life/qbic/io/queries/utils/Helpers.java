@@ -129,6 +129,11 @@ public final class Helpers {
         return chartConfig;
     }
 
+    public static boolean isOmicsRun(String name) {
+        String[] array = name.split("_");
+        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
+    }
+
 
 
 }
