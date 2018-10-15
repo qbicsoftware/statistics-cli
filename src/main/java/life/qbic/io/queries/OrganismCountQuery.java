@@ -8,8 +8,9 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriter
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import life.qbic.datamodel.QbicPropertyType;
+import life.qbic.datamodel.samples.SampleType;
 import life.qbic.io.queries.utils.Helpers;
-import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import life.qbic.io.webservice.REST;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * @author fhanssen
  * This Query class, accesses OpenBis and retrieves all samples. They are then counted once by the superkingdom they belong to,
- * once by genus and once by species. Species, which occupy large parts(> threshold, currently 25%) of a superkingdom,
+ * once by genus and once by species. Species, which occupy large parts(> DOMAIN_THRESHOLD, currently 25%) of a superkingdom,
  * are shown in the superkingdom resolution.
  */
 public class OrganismCountQuery extends AQuery {
@@ -38,7 +39,7 @@ public class OrganismCountQuery extends AQuery {
     private final IApplicationServerApi v3;
     private final String sessionToken;
     private final String ncbiTaxonomyRestUrl;
-    private final double threshold; //threshold for when a fraction of species in a kingdom counts as large
+    private final double DOMAIN_THRESHOLD; //DOMAIN_THRESHOLD for when a fraction of species in a kingdom counts as large
 
     private  SearchResult<Sample> searchResult;
 
@@ -63,7 +64,7 @@ public class OrganismCountQuery extends AQuery {
         this.v3 = v3;
         this.sessionToken = sessionToken;
         this.ncbiTaxonomyRestUrl = ncbiTaxUrl;
-        this.threshold = domainThreshold;
+        this.DOMAIN_THRESHOLD = domainThreshold;
     }
 
     /**
@@ -104,7 +105,7 @@ public class OrganismCountQuery extends AQuery {
         logger.info("Count samples on domain basis");
         generateDomainCountMap();
 
-        logger.info("Retrieve species with a larger share than " + threshold + " in their domain.");
+        logger.info("Retrieve species with a larger share than " + DOMAIN_THRESHOLD + " in their domain.");
         filterForLargeOrganisms();
 
         domainCountMap.keySet().forEach(domain -> {
@@ -153,7 +154,7 @@ public class OrganismCountQuery extends AQuery {
     private void retrieveSamplesFromOpenBis() {
 
         SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();
-        sampleSourcesCriteria.withType().withCode().thatEquals(OpenBisTerminology.BIO_ENTITY.toString());
+        sampleSourcesCriteria.withType().withCode().thatEquals(SampleType.Q_BIOLOGICAL_ENTITY.toString());
 
         SampleFetchOptions fetchOptions = new SampleFetchOptions();
         fetchOptions.withType();
@@ -181,7 +182,7 @@ public class OrganismCountQuery extends AQuery {
 
     private void countSamplesPerOrganism() {
         //Iterate over all search results
-        searchResult.getObjects().forEach(experiment -> Helpers.addEntryToStringCountMap(organismCountMap, experiment.getProperties().get(OpenBisTerminology.NCBI_ORGANISM.toString()), 1));
+        searchResult.getObjects().forEach(sample -> Helpers.addEntryToStringCountMap(organismCountMap, sample.getProperties().get(QbicPropertyType.Q_NCBI_ORGANISM.toString()), 1));
     }
 
     private void setOrganismToDomainAndGenusMap() {
@@ -243,7 +244,7 @@ public class OrganismCountQuery extends AQuery {
         final Map<String, Integer> subtractionMap = new HashMap<>();
         organismCountMap.keySet().forEach(o -> {
             double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));
-            if (perc > threshold && perc < 100.0) {
+            if (perc > DOMAIN_THRESHOLD && perc < 100.0) {
                 largeSpecies.add(o);
 
                 domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));

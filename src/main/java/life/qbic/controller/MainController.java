@@ -83,6 +83,7 @@ public class MainController {
         } catch (Exception e) {
             logger.error("Query " + queryClass.getClass() +"  failed with: " + e.getMessage());
             logger.error(e.getStackTrace());
+            e.printStackTrace();
 
         }
     }

@@ -68,6 +68,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>life.qbic</groupId>
+			<artifactId>data-model-lib</artifactId>
+			<version>0.3.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
 			<groupId>life.qbic.openbis</groupId>
 			<artifactId>openbis_api</artifactId>
 			<version>3-S253.0</version>

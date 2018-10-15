@@ -5,15 +5,15 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.datamodel.identifiers.SampleCodeFunctions;
+import life.qbic.datamodel.samples.SampleType;
 import life.qbic.exceptions.InvalidProjectCodeException;
 import life.qbic.io.queries.utils.Helpers;
-import life.qbic.io.queries.utils.lexica.OpenBisTerminology;
 import life.qbic.io.queries.utils.lexica.SpaceBlackList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import submodule.data.ChartConfig;
 import submodule.lexica.ChartNames;
-import submodule.lexica.Other;
 import submodule.lexica.Translator;
 
 import java.util.*;
@@ -97,7 +97,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
     private void retrieveDataFromOpenBis() {
 
         SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();
-        sampleSearchCriteria.withType().withCode().thatEquals(OpenBisTerminology.TEST_SAMPLE.toString());
+        sampleSearchCriteria.withType().withCode().thatEquals(SampleType.Q_TEST_SAMPLE.toString());
 
         SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();
         sampleFetchOptions.withChildren().withType();
@@ -128,7 +128,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
             //Determine omics type per sample
             sample.getChildren().forEach(c -> {
-                if (isOmicsRun(c.getType().toString())) {
+                if (Helpers.isOmicsRun(c.getType().toString())) {
                     omicsType.add(c.getType().toString().replace("SampleType ", ""));
                 }
             });
@@ -146,7 +146,7 @@ public class ProjectsTechnologiesQuery extends AQuery {
 
     private void matchProjectCodeToType(String code, Set<String> omicsType) throws InvalidProjectCodeException{
         if (code.length() > 5) {
-            String projectCode = code.substring(0, 5);
+            String projectCode = SampleCodeFunctions.getProjectPrefix(code);
             if (projectCodeToType.containsKey(projectCode)) {
                 omicsType.addAll(projectCodeToType.get(projectCode));
             }
@@ -173,12 +173,6 @@ public class ProjectsTechnologiesQuery extends AQuery {
             //If unknown ignore
             //}
         });
-    }
-
-
-    private boolean isOmicsRun(String name) {
-        String[] array = name.split("_");
-        return array[array.length - 1].equals("RUN") && !array[1].equals("WF");
     }
 
 
