@@ -1,0 +1,49 @@
+sudo: false
+dist: trusty
+language: java
+jdk: openjdk8
+cache:
+  directories:
+  - "$HOME/.m2/repository"
+branches:
+  only:
+  - master
+  - development
+before_install: unset _JAVA_OPTIONS
+install: true
+before_script: if [ "$VAADIN_CHARTS_LICENSE_CODE" != "" ]; then echo "$VAADIN_CHARTS_LICENSE_CODE"
+  > ~/.vaadin.charts.developer.license; fi;
+script: mvn --quiet --activate-profiles !development-build,!release-build --settings
+  .travis.settings.xml clean cobertura:cobertura install
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+- mvn --quiet --activate-profiles !development-build,!release-build --settings .travis.settings.xml
+  site
+deploy:
+- skip_cleanup: true
+  provider: script
+  script: mvn --quiet --activate-profiles development-build,!release-build --settings
+    .travis.settings.xml deploy
+  on:
+    branch: development
+    condition: '"$TRAVIS_EVENT_TYPE" = "push"'
+- skip_cleanup: true
+  provider: script
+  script: mvn --quiet --activate-profiles !development-build,release-build --settings
+    .travis.settings.xml deploy
+  on:
+    branch: master
+    condition: '"$TRAVIS_EVENT_TYPE" = "push"'
+notifications:
+  email:
+    on_success: never
+    on_failure: never
+  slack:
+    on_success: never
+    on_failure: always
+    rooms:
+    - secure: "***"
+env:
+  global:
+    - secure: "ohUez8nhsiuRow71tnOtrmszQjO6sqylYGlgC3Hl3sxC3kV8PvoayennVeHqQpi0a0/luyRd8f/oiYUwBFvSVMTXkX32Xgg+9EwV0jliHlpArqOloPfydCs0xJUkIIhBACozQrIfnDm9NMqAIryY/vwK75xNRetKJ3nxjByOP2qvz1IqVvmgLjppqS4jcmNt/3VmEnwiBeNl46SV+0CLEM5EKMHWcOW1VVJCmgrEAYazEB3BUuVEjEHuGPqrM9mVlWF+4Vp06/WEXi9GirU7BY/7lOxjXdB7oWwkmVuD0GdfwBAAqSs1vOZ9k4DBccUF5Tza8HqUQh39QS/uGm52RfNMbNmhgsNxPRUl1+G5Wwli62WNfdZ5suPk17gfZLTVRdxcWY8Wsny1XH496oxZwvzTLh+O89tPoHbXHednCFtfd+mMq0Pm5iwV4BSnQv/4WdZVrgnxtLv4s9wMjcHIRfWP1T7ghbCzIW/GI+hS18NSo3baIeToLlx+lqEEKCM2CFvy8AhRGkchj0dIXeEBPiI1uimhiVxmk56nwByTq27q+694oY9V9Xy+V6SVlQOcfbsmjVOuG7/tHudv6MLgT5r69iFnScFxrjc5kNDXOljZyeVviTh7fSUtza5TILrcpL/UqYY3ED3utM0URH25gINbH4wC1beIg6UHhB1G9l4="
+    - secure: "KM04Vk/gZatqcsT6pJQY53xzYTs5PEYvL7Lum1v0FtIyWVG3l+8XZvyEWLUqyjk77K/6y5rHq6Lddfpn0lEOml+aA/fxArXI/RseWcMFH393gHHlEnR9CeAwdwdQ78SfnZ1+qVoD5nuejk0DbtxdYQM1qwKM3vHps5uD1BZl+quHWg/Iy5edups5PzrnTLbqi6gxgvMnWxq0MU06UVD5UDcSgQNLSVskOtjc6AKRXF0/9Cnha+K4QYVMxI9QZlD1KUqN7TtEgL7r+2lVUw0yQcMBTmmrPuK4WFz9wtiO+OFrNMfLmX6Ey/Yl8NccCF3afUiwVtgTMNFFptQx0kqbFU856wDEOaTJIkD8SzkYHrIGc3fEroz/UFBi43t6zebdjbUG5qgvZ2q0YddzWsLAUb5XA3GVchybIoFVHoSLGfwZdtKY5KJzCE6YILL/o4UdHI14paq7PFhi1NkCQENoGP5lPppA9PvfujWk0wM5BFjTgswaFrQ/vgqQTTduVRvfNTj+k8m3POs9GLXS9CWkD49l4bP0Qn3FDdT95j3OAy0SiwrIqRtQVCtB0X2oAzm/p/SeZx5G7OyDGZqZaKwbM2tyh67nAMzJhPt3a2r1jYFXJP1kd30T6QpHMqEY9hpj6VLnPTNmt335wuBuMOuS+NYIKeg44hkr5A6fXqt5aqk="
