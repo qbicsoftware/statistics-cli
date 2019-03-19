@@ -9,7 +9,7 @@
 		<version>1.3.0</version>
 	</parent>
 	<artifactId>statistics-cli</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
+	<version>1.1.1-SNAPSHOT</version>
 	<name>Statistics CLI</name>
 	<url>http://github.com/qbicsoftware/statistics-cli</url>
 	<description>This tool  is responsible for data retrieval and formatting, in order to visualize data on our homepage.</description>
