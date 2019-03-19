@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -220,7 +221,8 @@ public class OrganismCountQuery extends AQuery {
                     scientificName = line.trim();
                 }
             }
-        } catch (IOException e) {
+            TimeUnit.MILLISECONDS.sleep(340);
+        } catch (IOException|InterruptedException e) {
             logger.error("NCBI access to retrieve names of tax ids failed: " + e.getMessage());
         }
     }
