@@ -1,0 +1,8 @@
+life.qbic.cli
+life.qbic.controller
+life.qbic.exceptions
+life.qbic.io.queries
+life.qbic.io.queries.utils
+life.qbic.io.queries.utils.lexica
+life.qbic.io.webservice
+life.qbic.io.writer

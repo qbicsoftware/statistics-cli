@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SampleTypeQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries</a> &gt; <span class="el_source">SampleTypeQuery.java</span></div><h1>SampleTypeQuery.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries;
+
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.datamodel.QbicPropertyType;
+import life.qbic.datamodel.samples.SampleType;
+import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.SpaceBlackList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.lexica.ChartNames;
+import submodule.lexica.Other;
+
+import java.util.*;
+
+/**
+ * @author fhanssen
+ */
+public class SampleTypeQuery extends AQuery {
+
+<span class="nc" id="L25">    private static final Logger logger = LogManager.getLogger(SampleTypeQuery.class);</span>
+
+    private final IApplicationServerApi v3;
+    private final String sessionToken;
+
+<span class="nc" id="L30">    private final Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+
+    private SearchResult&lt;Sample&gt; searchResult;
+
+
+<span class="nc" id="L35">    public SampleTypeQuery(IApplicationServerApi v3, String sessionToken) {</span>
+<span class="nc" id="L36">        this.v3 = v3;</span>
+<span class="nc" id="L37">        this.sessionToken = sessionToken;</span>
+<span class="nc" id="L38">    }</span>
+
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples of type Q_TEST_SAMPLE
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Count samples by origin (RNA, DNA, etc.)
+     * 4. Count each sample origin by technology (DNA: x NGS, y MA etc.)
+     * 6. Format data and add to config
+     * @return Map of generate configs is returned: Data: lists of sample type count per technology, xCategories: technology
+     *  e.g. data:  - PEPTIDES: 39
+     *                DNA: 1
+     *                PROTEINS: 13
+     *              - RNA: 17
+     *                PROTEINS: 3
+     *              - RNA: 1
+     *xCategories:  - Q_MS_RUN
+     *              - Q_MICROARRAY_RUN
+     *              - Multi-omics
+     *
+     *Meaning: Total of 16 protein samples: 13 generated with MS technology and 3  using micro arrays.
+     */
+    @Override
+    public Map&lt;String, ChartConfig&gt; query() {
+
+<span class="nc" id="L63">        logger.info(&quot;Run sample type query&quot;);</span>
+
+<span class="nc" id="L65">        clear();</span>
+
+<span class="nc" id="L67">        retrieveSamplesFromOpenBis();</span>
+
+        //TODO comment this back in
+        // TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+<span class="nc" id="L71">        removeBlacklistedSpaces();</span>
+
+<span class="nc" id="L73">        countSampleTypes();</span>
+
+<span class="nc" id="L75">        Map&lt;String, ChartConfig&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L76">        map.put(ChartNames.Sample_Types.toString(),Helpers.generateChartConfig(result, &quot;Samples&quot;, &quot;Number of Already Measured Samples&quot;, &quot;Samples&quot;));</span>
+
+<span class="nc" id="L78">        return map;</span>
+    }
+
+    @Override
+    void removeBlacklistedSpaces() {
+
+<span class="nc" id="L84">        List&lt;Sample&gt; removables = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L85">        searchResult.getObjects().forEach(experiment -&gt; {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {</span>
+<span class="nc" id="L87">                removables.add(experiment);</span>
+            }
+<span class="nc" id="L89">        });</span>
+<span class="nc" id="L90">        searchResult.getObjects().removeAll(removables);</span>
+<span class="nc" id="L91">        logger.info(&quot;Removed results from blacklisted OpenBis Spaces: &quot; + SpaceBlackList.getList().toString());</span>
+
+<span class="nc" id="L93">    }</span>
+
+    private void countSampleTypes() {
+<span class="nc" id="L96">        searchResult.getObjects().forEach(sample -&gt; {</span>
+
+<span class="nc" id="L98">            Set&lt;String&gt; omicsType = new HashSet&lt;&gt;();</span>
+
+            //Determine omics type per sample
+<span class="nc" id="L101">            sample.getChildren().forEach(c -&gt; {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                if (Helpers.isOmicsRun(c.getType().toString())) {</span>
+<span class="nc" id="L103">                    omicsType.add(c.getType().toString().replace(&quot;SampleType &quot;,&quot;&quot;));</span>
+                }
+<span class="nc" id="L105">            });</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if(sample.getProperties().get(QbicPropertyType.Q_SAMPLE_TYPE.toString()).toUpperCase().contains(&quot;RNA&quot;)){</span>
+                //TODO Lump all RNA together: Needs to be tested on big instance, since test instance only contains RNA
+<span class="nc" id="L109">                addSampleTechCount(&quot;RNA&quot;, omicsType);</span>
+            }else {
+<span class="nc" id="L111">                addSampleTechCount(sample.getProperties().get(QbicPropertyType.Q_SAMPLE_TYPE.toString()), omicsType);</span>
+            }
+<span class="nc" id="L113">        });</span>
+<span class="nc" id="L114">    }</span>
+
+    private void addSampleTechCount(String sampleType, Set&lt;String&gt; omicsType) {
+<span class="nc" id="L117">        Map&lt;String, Integer&gt; temp = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L119">        String curr = &quot;&quot;;</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if(omicsType.size() &gt; 1){</span>
+<span class="nc" id="L121">            curr = Other.Multi_omics.toString();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        }else if(omicsType.size() == 1){</span>
+<span class="nc" id="L123">            curr = omicsType.iterator().next();</span>
+        }
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if(!curr.isEmpty()) {// if empty, then sample has not been measured(&quot;Unknown&quot;)</span>
+            // : then don't do anything as we will ignore unmeasured samples.
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (result.keySet().contains(curr)) {</span>
+<span class="nc" id="L130">                temp = (Map) result.get(curr);</span>
+            }
+<span class="nc" id="L132">            Helpers.addEntryToStringCountMap(temp, sampleType, 1);</span>
+<span class="nc" id="L133">            result.put(curr, temp);</span>
+
+        }
+
+<span class="nc" id="L137">    }</span>
+
+    private void clear(){
+<span class="nc" id="L140">        result.clear();</span>
+<span class="nc" id="L141">    }</span>
+
+    private void retrieveSamplesFromOpenBis() {
+
+<span class="nc" id="L145">        SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();</span>
+<span class="nc" id="L146">        sampleSourcesCriteria.withType().withCode().thatEquals(SampleType.Q_TEST_SAMPLE.toString());</span>
+
+<span class="nc" id="L148">        SampleFetchOptions fetchOptions = new SampleFetchOptions();</span>
+<span class="nc" id="L149">        fetchOptions.withProperties();</span>
+<span class="nc" id="L150">        fetchOptions.withChildren().withType();</span>
+<span class="nc" id="L151">        fetchOptions.withSpace();</span>
+
+
+<span class="nc" id="L154">        searchResult =  v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);</span>
+
+<span class="nc" id="L156">    }</span>
+
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

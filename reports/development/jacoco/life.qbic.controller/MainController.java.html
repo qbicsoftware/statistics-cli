@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.controller</a> &gt; <span class="el_source">MainController.java</span></div><h1>MainController.java</h1><pre class="source lang-java linenums">package life.qbic.controller;
+
+import life.qbic.cli.MainCommand;
+import life.qbic.io.queries.*;
+import life.qbic.io.webservice.OpenBisAccess;
+import life.qbic.io.writer.YAMLWriter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.data.MainConfig;
+
+import java.util.Map;
+
+/**
+ * @author fhanssen
+ * MainController handles all major oprations. It is called from the main class, establishes a connection to OpenBis then
+ * executes all queries and adds them to the config file. Lastly the connection has to be closed.
+ */
+
+public class MainController {
+
+<span class="nc" id="L22">    private static final Logger logger = LogManager.getLogger(MainController.class);</span>
+
+    private final OpenBisAccess openBisAccess;
+    private final String outputFilename;
+    private final MainConfig charts;
+
+    //Query classes
+    private final AQuery organismCountQuery;
+    private final AQuery availablePipelinesQuery;
+    private final AQuery projectsTechnologiesQuery;
+    private final AQuery sampleTypeQuery;
+
+<span class="nc" id="L34">    public MainController(MainCommand command) {</span>
+<span class="nc" id="L35">        logger.info(&quot;Establish access to OpenBis&quot;);</span>
+
+<span class="nc" id="L37">        this.openBisAccess = new OpenBisAccess(command.openBISUrl,</span>
+                command.openBISUsername,
+                command.openBISPassword);
+
+<span class="nc" id="L41">        this.outputFilename = command.outputFileName;</span>
+
+<span class="nc" id="L43">        this.charts = new MainConfig();</span>
+
+        //init query classes
+<span class="nc" id="L46">        organismCountQuery = new OrganismCountQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken(),</span>
+                command.ncbiTaxUrl, command.domainThreshold);
+<span class="nc" id="L48">        availablePipelinesQuery = new WorkflowQueries(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken(),</span>
+                command.gitHubUrl, command.gitHubHeaderKey, command.gitHubHeaderValue, command.maxNumRepos);
+<span class="nc" id="L50">        projectsTechnologiesQuery = new ProjectsTechnologiesQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());</span>
+<span class="nc" id="L51">        sampleTypeQuery = new SampleTypeQuery(this.openBisAccess.getV3(), this.openBisAccess.getSessionToken());</span>
+
+<span class="nc" id="L53">        logger.info(&quot;Start queries&quot;);</span>
+<span class="nc" id="L54">        queryAll();</span>
+
+<span class="nc" id="L56">        logger.info(&quot;Write results to &quot; + outputFilename);</span>
+<span class="nc" id="L57">        writeToFile();</span>
+
+<span class="nc" id="L59">        logger.info(&quot;Log out of OpenBis&quot;);</span>
+<span class="nc" id="L60">        logout();</span>
+<span class="nc" id="L61">    }</span>
+
+    /**
+     * This method executes all queries. If new queries should be run, they need to be started from here. The resulting
+     * ChartConfigs need to be added to the MainConfig object named 'charts'.
+     */
+    private void queryAll() {
+
+<span class="nc" id="L69">       query(organismCountQuery);</span>
+<span class="nc" id="L70">       query(availablePipelinesQuery);</span>
+<span class="nc" id="L71">       query(projectsTechnologiesQuery);</span>
+<span class="nc" id="L72">       query(sampleTypeQuery);</span>
+
+        //TODO 3: Add your query call here
+
+<span class="nc" id="L76">    }</span>
+
+    private void query(AQuery queryClass){
+        try {
+<span class="nc" id="L80">            logger.info(&quot;Run &quot; + queryClass.getClass() +&quot; query&quot;);</span>
+<span class="nc" id="L81">            Map&lt;String, ChartConfig&gt; result = queryClass.query();</span>
+<span class="nc" id="L82">            result.keySet().forEach(name -&gt; charts.addCharts(name, result.get(name)));</span>
+<span class="nc" id="L83">        } catch (Exception e) {</span>
+<span class="nc" id="L84">            logger.error(&quot;Query &quot; + queryClass.getClass() +&quot;  failed with: &quot; + e.getMessage());</span>
+<span class="nc" id="L85">            logger.error(e.getStackTrace());</span>
+<span class="nc" id="L86">            e.printStackTrace();</span>
+
+<span class="nc" id="L88">        }</span>
+<span class="nc" id="L89">    }</span>
+
+
+    private void writeToFile() {
+<span class="nc" id="L93">        YAMLWriter.writeToFile(outputFilename, charts);</span>
+<span class="nc" id="L94">    }</span>
+
+    private void logout() {
+<span class="nc" id="L97">        openBisAccess.logout();</span>
+<span class="nc" id="L98">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

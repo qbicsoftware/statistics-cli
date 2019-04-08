@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries</a> &gt; <span class="el_source">AQuery.java</span></div><h1>AQuery.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries;
+
+import submodule.data.ChartConfig;
+
+import java.util.Map;
+
+/**
+ * @author fhanssen
+ * All query classes need to to implement this abstract class, in order to ensure they have all expected methods.
+ * The abstracte class holds the needed openbis credentials.
+ */
+<span class="nc" id="L12">public abstract class AQuery{</span>
+
+    abstract public  Map&lt;String, ChartConfig&gt; query();
+
+    //This kills the efficiency a bit because downloaded open bis data as to be iterate twice. However,
+    // it should serve as a reminder to not count results from blacklisted spaces, which IMO is more important.
+    abstract void removeBlacklistedSpaces();
+
+    //TODO 1: implement this class to your own query class (see OrganismCountPresenter for an example)
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

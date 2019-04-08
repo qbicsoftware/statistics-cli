@@ -1,0 +1,17 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Statistics CLI,life.qbic.cli,MainEntryPoint,20,0,0,0,6,0,3,0,3,0
+Statistics CLI,life.qbic.cli,MainTool,31,0,0,0,9,0,3,0,3,0
+Statistics CLI,life.qbic.cli,MainCommand,3,0,0,0,1,0,1,0,1,0
+Statistics CLI,life.qbic.io.queries.utils,Helpers,306,27,14,4,53,3,15,4,8,2
+Statistics CLI,life.qbic.exceptions,InvalidProjectCodeException,13,0,0,0,6,0,3,0,3,0
+Statistics CLI,life.qbic.io.queries.utils.lexica,WorkflowSubtypes,67,0,0,0,8,0,3,0,3,0
+Statistics CLI,life.qbic.io.queries.utils.lexica,SpaceBlackList,37,0,0,0,5,0,3,0,3,0
+Statistics CLI,life.qbic.io.queries,WorkflowQueries,461,0,26,0,97,0,33,0,20,0
+Statistics CLI,life.qbic.io.queries,SampleTypeQuery,228,0,14,0,55,0,18,0,11,0
+Statistics CLI,life.qbic.io.queries,ProjectsTechnologiesQuery,362,0,16,0,74,0,22,0,14,0
+Statistics CLI,life.qbic.io.queries,OrganismCountQuery,781,0,34,0,144,0,45,0,28,0
+Statistics CLI,life.qbic.io.queries,AQuery,3,0,0,0,1,0,1,0,1,0
+Statistics CLI,life.qbic.controller,MainController,192,0,0,0,35,0,7,0,7,0
+Statistics CLI,life.qbic.io.writer,YAMLWriter,50,0,0,0,14,0,3,0,3,0
+Statistics CLI,life.qbic.io.webservice,REST,39,0,0,0,10,0,3,0,3,0
+Statistics CLI,life.qbic.io.webservice,OpenBisAccess,64,0,0,0,17,0,6,0,6,0

@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrganismCountQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries</a> &gt; <span class="el_source">OrganismCountQuery.java</span></div><h1>OrganismCountQuery.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries;
+
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.VocabularyTerm;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.fetchoptions.VocabularyTermFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.vocabulary.search.VocabularyTermSearchCriteria;
+import life.qbic.datamodel.QbicPropertyType;
+import life.qbic.datamodel.samples.SampleType;
+import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.SpaceBlackList;
+import life.qbic.io.webservice.REST;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.lexica.ChartNames;
+import submodule.lexica.Kingdoms;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * @author fhanssen
+ * This Query class, accesses OpenBis and retrieves all samples. They are then counted once by the superkingdom they belong to,
+ * once by genus and once by species. Species, which occupy large parts(&gt; DOMAIN_THRESHOLD, currently 25%) of a superkingdom,
+ * are shown in the superkingdom resolution.
+ */
+public class OrganismCountQuery extends AQuery {
+
+<span class="nc" id="L38">    private static final Logger logger = LogManager.getLogger(OrganismCountQuery.class);</span>
+
+    private final IApplicationServerApi v3;
+    private final String sessionToken;
+    private final String ncbiTaxonomyRestUrl;
+    private final double DOMAIN_THRESHOLD; //DOMAIN_THRESHOLD for when a fraction of species in a kingdom counts as large
+
+    private  SearchResult&lt;Sample&gt; searchResult;
+
+<span class="nc" id="L47">    private final List&lt;String&gt; largeSpecies = new ArrayList&lt;&gt;(); //Species &gt;= largeThreshold share</span>
+<span class="nc" id="L48">    private final Set&lt;String&gt; largeDomains = new HashSet&lt;&gt;();</span>
+
+<span class="nc" id="L50">    private final Map&lt;String, String&gt; vocabularyMap = new HashMap&lt;&gt;(); //511145=Escherichia coli strain K12 MG1655 [NCBI ID = Name]</span>
+
+<span class="nc" id="L52">    private final Map&lt;String, Integer&gt; organismCountMap = new HashMap&lt;&gt;(); //103690=26 [NCBI ID = count]</span>
+<span class="nc" id="L53">    private final Map&lt;String, String&gt; organismDomainMap = new HashMap&lt;&gt;(); //103690=Bacteria [NCBI ID = domain]</span>
+<span class="nc" id="L54">    private final Map&lt;String, String&gt; organismGenusMap = new HashMap&lt;&gt;(); //103690=Nostoc [NCBI ID = Genus]</span>
+
+    //Result maps
+<span class="nc" id="L57">    private final Map&lt;String, Object&gt; domainCountMap = new HashMap&lt;&gt;(); // Eukaryota=2000, Bacteria = 200, Homo Sapiens = 5000,...</span>
+<span class="nc" id="L58">    private final Map&lt;String, Map&lt;String, Object&gt;&gt; genusCountMaps = new HashMap&lt;&gt;(); //Eukaryota, Map[Mus = 26]</span>
+<span class="nc" id="L59">    private final Map&lt;String, Map&lt;String, Object&gt;&gt; speciesCountMaps = new HashMap&lt;&gt;(); //Eukaryota, Map[Mus musculus = 23]</span>
+
+<span class="nc" id="L61">    private final Map&lt;String, Object&gt; organismNameGenusMap = new HashMap&lt;&gt;(); //Cavia aperea=Cavia [Species name = Genus]</span>
+
+<span class="nc" id="L63">    public OrganismCountQuery(IApplicationServerApi v3, String sessionToken, String ncbiTaxUrl, double domainThreshold) {</span>
+
+<span class="nc" id="L65">        this.v3 = v3;</span>
+<span class="nc" id="L66">        this.sessionToken = sessionToken;</span>
+<span class="nc" id="L67">        this.ncbiTaxonomyRestUrl = ncbiTaxUrl;</span>
+<span class="nc" id="L68">        this.DOMAIN_THRESHOLD = domainThreshold;</span>
+<span class="nc" id="L69">    }</span>
+
+    /**
+     * This query executes the following steps:
+     * 1. Retrieve all taxonomy IDs currently available in OpenBis and map IDs to names
+     * 2. Get all samples of type Q_BIOLOGICAL_ENTITY
+     * 3. Remove all samples belonging to spaces that have been blacklisted
+     * 4. Group the samples by their organism, aka count all mouse samples and so on. Samples are encoded with tax ID
+     * 5. Retrieve domain and genus from NCBI for each sample
+     * 6. Count samples by domain
+     * 7. Organisms that have a large share in their respective domain(&gt; domainThreshold) are removed from organismCountMap
+     *    and added to domainCountMap
+     * 8. Map all samples, which are on species level, with their respective genus
+     * 9. Format data and add to config
+     * @return Map of generate configs is returned: DomainName -&gt; Count, For each domain: SpeciesName -&gt; Count, SpeciesName-&gt; GenusName
+     */
+    public Map&lt;String, ChartConfig&gt; query() {
+
+<span class="nc" id="L87">        logger.info(&quot;Run organism count query&quot;);</span>
+
+<span class="nc" id="L89">        clearMaps();</span>
+
+<span class="nc" id="L91">        logger.info(&quot;Retrieve names of taxonomy ids.&quot;);</span>
+<span class="nc" id="L92">        mapTaxonomyIDToName();</span>
+
+<span class="nc" id="L94">        logger.info(&quot;Count OpenBis samples on species basis.&quot;);</span>
+<span class="nc" id="L95">        retrieveSamplesFromOpenBis();</span>
+
+        //TODO comment this back in
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+<span class="nc" id="L99">        removeBlacklistedSpaces();</span>
+
+<span class="nc" id="L101">        countSamplesPerOrganism();</span>
+
+<span class="nc" id="L103">        logger.info(&quot;Map species to domain and genus&quot;);</span>
+<span class="nc" id="L104">        setOrganismToDomainAndGenusMap();</span>
+
+<span class="nc" id="L106">        logger.info(&quot;Count samples on domain basis&quot;);</span>
+<span class="nc" id="L107">        generateDomainCountMap();</span>
+
+<span class="nc" id="L109">        logger.info(&quot;Retrieve species with a larger share than &quot; + DOMAIN_THRESHOLD + &quot; in their domain.&quot;);</span>
+<span class="nc" id="L110">        filterForLargeOrganisms();</span>
+
+<span class="nc" id="L112">        domainCountMap.keySet().forEach(domain -&gt; {</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">            if (!(domain.equals(&quot;Other&quot;) || domain.equals(&quot;unclassified sequences&quot;))</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    &amp;&amp; Kingdoms.getList().contains(domain)) { //exclude species with large share, which were added to superkingdom resolution from being further classified</span>
+<span class="nc" id="L115">                logger.info(&quot;Create genus and species count map of &quot; + domain);</span>
+<span class="nc" id="L116">                genusCountMaps.put(domain, new HashMap&lt;&gt;());</span>
+<span class="nc" id="L117">                speciesCountMaps.put(domain, new HashMap&lt;&gt;());</span>
+            }
+<span class="nc" id="L119">        });</span>
+
+<span class="nc" id="L121">        generateGenusCountMap();</span>
+<span class="nc" id="L122">        generateSpeciesCountMap();</span>
+
+<span class="nc" id="L124">        Map&lt;String, ChartConfig&gt; result = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L126">        logger.info(&quot;Set results.&quot;);</span>
+
+        //Add Superkingdom to config
+<span class="nc" id="L129">        largeDomains.forEach(largeDomain -&gt; domainCountMap.put(&quot;Other &quot;.concat(largeDomain), domainCountMap.get(largeDomain)));</span>
+<span class="nc" id="L130">        largeDomains.forEach(domainCountMap::remove);</span>
+<span class="nc" id="L131">        result.put(&quot;SuperKingdom&quot;, Helpers.addPercentages( Helpers.generateChartConfig(domainCountMap, &quot;SuperKingdom&quot;, &quot;Sample Count by Domain&quot;, &quot;Organisms&quot;)));</span>
+
+        //Add Genus maps to config
+<span class="nc" id="L134">        genusCountMaps.keySet().forEach(domain -&gt;</span>
+<span class="nc" id="L135">                result.put(domain.concat(&quot;_Genus&quot;), Helpers.addPercentages(Helpers.generateChartConfig(genusCountMaps.get(domain), domain, &quot;Sample Count &quot;.concat(domain), &quot;Organisms&quot;))));</span>
+        //Add Species to config
+<span class="nc" id="L137">        speciesCountMaps.keySet().forEach(domain -&gt;</span>
+<span class="nc" id="L138">                result.put(domain.concat(&quot;_Species&quot;), Helpers.addPercentages(Helpers.generateChartConfig(speciesCountMaps.get(domain), domain, &quot;&quot;, &quot;Organisms&quot;))));</span>
+
+        //Add species to genus map
+<span class="nc" id="L141">        result.put(ChartNames.Species_Genus.toString(), Helpers.generateChartConfig(organismNameGenusMap, ChartNames.Species_Genus.toString(), &quot;&quot;, &quot;Organisms&quot;));</span>
+
+<span class="nc" id="L143">        return result;</span>
+    }
+
+    private void clearMaps() {
+<span class="nc" id="L147">        domainCountMap.clear();</span>
+<span class="nc" id="L148">        organismCountMap.clear();</span>
+<span class="nc" id="L149">        organismDomainMap.clear();</span>
+<span class="nc" id="L150">        organismGenusMap.clear();</span>
+<span class="nc" id="L151">        genusCountMaps.clear();</span>
+<span class="nc" id="L152">        speciesCountMaps.clear();</span>
+<span class="nc" id="L153">    }</span>
+
+    private void retrieveSamplesFromOpenBis() {
+
+<span class="nc" id="L157">        SampleSearchCriteria sampleSourcesCriteria = new SampleSearchCriteria();</span>
+<span class="nc" id="L158">        sampleSourcesCriteria.withType().withCode().thatEquals(SampleType.Q_BIOLOGICAL_ENTITY.toString());</span>
+
+<span class="nc" id="L160">        SampleFetchOptions fetchOptions = new SampleFetchOptions();</span>
+<span class="nc" id="L161">        fetchOptions.withType();</span>
+<span class="nc" id="L162">        fetchOptions.withProject();</span>
+<span class="nc" id="L163">        fetchOptions.withSpace();</span>
+<span class="nc" id="L164">        fetchOptions.withProperties();</span>
+<span class="nc" id="L165">        searchResult = v3.searchSamples(sessionToken, sampleSourcesCriteria, fetchOptions);</span>
+
+<span class="nc" id="L167">    }</span>
+
+    @Override
+    void  removeBlacklistedSpaces(){
+
+<span class="nc" id="L172">        List&lt;Sample&gt; removables = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L173">        searchResult.getObjects().forEach(experiment -&gt; {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {</span>
+<span class="nc" id="L175">                removables.add(experiment);</span>
+            }
+<span class="nc" id="L177">        });</span>
+<span class="nc" id="L178">        searchResult.getObjects().removeAll(removables);</span>
+
+<span class="nc" id="L180">        logger.info(&quot;Removed results from blacklisted OpenBis Spaces: &quot; + SpaceBlackList.getList().toString());</span>
+
+<span class="nc" id="L182">    }</span>
+
+    private void countSamplesPerOrganism() {
+        //Iterate over all search results
+<span class="nc" id="L186">        searchResult.getObjects().forEach(sample -&gt; Helpers.addEntryToStringCountMap(organismCountMap, sample.getProperties().get(QbicPropertyType.Q_NCBI_ORGANISM.toString()), 1));</span>
+<span class="nc" id="L187">    }</span>
+
+    private void setOrganismToDomainAndGenusMap() {
+<span class="nc" id="L190">        organismCountMap.keySet().forEach(organism -&gt; {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (organism.equals(&quot;0&quot;)) { //0 = 'Other' in domain and can't be queried to NCBI</span>
+<span class="nc" id="L192">                organismDomainMap.put(organism, &quot;Other&quot;);</span>
+            } else {
+<span class="nc" id="L194">                retrieveSuperKingdomAndGenusFromNCBI(organism);</span>
+            }
+<span class="nc" id="L196">        });</span>
+<span class="nc" id="L197">    }</span>
+
+    //FIXME: Check with Andreas when the new XML format is implemented
+    private void retrieveSuperKingdomAndGenusFromNCBI(String organism) {
+<span class="nc" id="L201">        try (BufferedReader rd = new BufferedReader(new InputStreamReader((REST.call(ncbiTaxonomyRestUrl.concat(organism).concat(&quot;&amp;retmode=xml&quot;)))))) {</span>
+            String line;
+<span class="nc" id="L203">            String scientificName = &quot;&quot;;</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            while ((line = rd.readLine()) != null) {</span>
+                //Retrieve Genus
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                if (line.contains(&quot;&lt;Rank&gt;genus&quot;)) {</span>
+<span class="nc" id="L207">                    organismGenusMap.put(organism, getScientificName(scientificName));</span>
+                }
+
+                //Retrieve Superkingdom
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                if (line.contains(&quot;&lt;Rank&gt;superkingdom&quot;)) {</span>
+<span class="nc" id="L212">                    organismDomainMap.put(organism, getScientificName(scientificName));</span>
+                }
+
+                //Handle unclassified samples
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (line.contains(&quot;&lt;Lineage&gt;unclassified sequences&lt;/Lineage&gt;&quot;)) {</span>
+<span class="nc" id="L217">                    organismDomainMap.put(organism, &quot;unclassified sequences&quot;);</span>
+                }
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                if (line.contains(&quot;&lt;ScientificName&gt;&quot;)) {</span>
+<span class="nc" id="L221">                    scientificName = line.trim();</span>
+                }
+            }
+<span class="nc" id="L224">            TimeUnit.MILLISECONDS.sleep(340);</span>
+<span class="nc" id="L225">        } catch (IOException|InterruptedException e) {</span>
+<span class="nc" id="L226">            logger.error(&quot;NCBI access to retrieve names of tax ids failed: &quot; + e.getMessage());</span>
+<span class="nc" id="L227">        }</span>
+<span class="nc" id="L228">    }</span>
+
+    private String getScientificName(String line) {
+        //Extract Scientific name with regex
+<span class="nc" id="L232">        Pattern p = Pattern.compile(&quot;(&lt;ScientificName&gt;)(.*?)(&lt;\\/ScientificName&gt;)&quot;);</span>
+<span class="nc" id="L233">        Matcher m = p.matcher(line);</span>
+<span class="nc" id="L234">        m.find();</span>
+
+<span class="nc" id="L236">        return m.group(2);</span>
+    }
+
+    private void generateDomainCountMap() {
+<span class="nc" id="L240">        organismDomainMap.keySet().forEach(o -&gt;</span>
+<span class="nc" id="L241">                Helpers.addEntryToStringCountMap(domainCountMap, organismDomainMap.get(o), organismCountMap.get(o)));</span>
+<span class="nc" id="L242">    }</span>
+
+    private void filterForLargeOrganisms() {
+
+<span class="nc" id="L246">        final Map&lt;String, Integer&gt; subtractionMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L247">        organismCountMap.keySet().forEach(o -&gt; {</span>
+<span class="nc" id="L248">            double perc = 100.0 * (double) ((int) organismCountMap.get(o)) / (double) ((int) domainCountMap.get(organismDomainMap.get(o)));</span>
+<span class="nc bnc" id="L249" title="All 4 branches missed.">            if (perc &gt; DOMAIN_THRESHOLD &amp;&amp; perc &lt; 100.0) {</span>
+<span class="nc" id="L250">                largeSpecies.add(o);</span>
+
+<span class="nc" id="L252">                domainCountMap.put(vocabularyMap.get(o), organismCountMap.get(o));</span>
+<span class="nc" id="L253">                int currcount = 0;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                if(subtractionMap.containsKey(organismDomainMap.get(o))) {</span>
+<span class="nc" id="L255">                    currcount = subtractionMap.get(organismDomainMap.get(o));</span>
+                }
+<span class="nc" id="L257">                subtractionMap.put(organismDomainMap.get(o), currcount + organismCountMap.get(o));</span>
+<span class="nc" id="L258">                largeDomains.add(organismDomainMap.get(o));</span>
+            }
+
+<span class="nc" id="L261">        });</span>
+
+<span class="nc" id="L263">        subtractionMap.keySet().forEach(key -&gt;{</span>
+<span class="nc" id="L264">            int currCount = (int) domainCountMap.get(key);</span>
+<span class="nc" id="L265">            domainCountMap.put(key, currCount - subtractionMap.get(key));</span>
+<span class="nc" id="L266">        });</span>
+
+<span class="nc" id="L268">    }</span>
+
+    private void generateGenusCountMap() {
+
+<span class="nc" id="L272">        organismGenusMap.keySet().forEach(organism -&gt; {</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (!largeSpecies.contains(organism)) {</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">                if (Kingdoms.getList().contains(organismDomainMap.get(organism))) {</span>
+<span class="nc" id="L275">                    Helpers.addEntryToStringCountMap(genusCountMaps.get(organismDomainMap.get(organism)), organismGenusMap.get(organism), organismCountMap.get(organism));</span>
+                }
+            }
+<span class="nc" id="L278">        });</span>
+<span class="nc" id="L279">    }</span>
+
+    private void generateSpeciesCountMap() {
+
+<span class="nc" id="L283">        organismDomainMap.keySet().forEach(organism -&gt; {</span>
+<span class="nc" id="L284">            organismNameGenusMap.put(vocabularyMap.get(organism), organismGenusMap.get(organism));</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">            if (!largeSpecies.contains(organism)) {</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">                if (Kingdoms.getList().contains(organismDomainMap.get(organism))) {</span>
+<span class="nc" id="L287">                    speciesCountMaps.get(organismDomainMap.get(organism)).put(vocabularyMap.get(organism), organismCountMap.get(organism));</span>
+                }
+            }
+<span class="nc" id="L290">        });</span>
+<span class="nc" id="L291">    }</span>
+
+    private void mapTaxonomyIDToName() {
+<span class="nc" id="L294">        VocabularyTermFetchOptions vocabularyFetchOptions = new VocabularyTermFetchOptions();</span>
+<span class="nc" id="L295">        vocabularyFetchOptions.withVocabulary();</span>
+
+<span class="nc" id="L297">        VocabularyTermSearchCriteria vocabularyTermSearchCriteria = new VocabularyTermSearchCriteria();</span>
+<span class="nc" id="L298">        vocabularyTermSearchCriteria.withCode();</span>
+
+<span class="nc" id="L300">        SearchResult&lt;VocabularyTerm&gt; vocabularyTermSearchResult = v3.searchVocabularyTerms(sessionToken, vocabularyTermSearchCriteria, vocabularyFetchOptions);</span>
+
+<span class="nc" id="L302">        vocabularyTermSearchResult.getObjects().forEach(v -&gt;</span>
+<span class="nc" id="L303">                vocabularyMap.put(v.getCode(), v.getLabel())</span>
+        );
+<span class="nc" id="L305">    }</span>
+
+
+
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

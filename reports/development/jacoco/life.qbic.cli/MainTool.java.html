@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainTool.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.cli</a> &gt; <span class="el_source">MainTool.java</span></div><h1>MainTool.java</h1><pre class="source lang-java linenums">package life.qbic.cli;
+
+import life.qbic.controller.MainController;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import picocli.CommandLine;
+
+/**
+ * Implementation of Statistics CLI. Its command-line arguments are contained in instances of {@link MainCommand}.
+ */
+public class MainTool extends QBiCTool&lt;MainCommand&gt; {
+
+<span class="nc" id="L13">    private static final Logger LOG = LogManager.getLogger(MainTool.class);</span>
+
+    /**
+     * Constructor.
+     * 
+     * @param command an object that represents the parsed command-line arguments.
+     */
+    public MainTool(final MainCommand command) {
+<span class="nc" id="L21">        super(command);</span>
+<span class="nc" id="L22">    }</span>
+
+    @Override
+    public void execute() {
+        // get the parsed command-line arguments
+<span class="nc" id="L27">        final MainCommand command = super.getCommand();</span>
+
+        // TODO: do something useful with the obtained command.
+
+        try {
+            //@/etc/qbic-stat.config jetty:run
+<span class="nc" id="L33">            MainController mainController = new MainController(command);</span>
+<span class="nc" id="L34">        } catch (CommandLine.ParameterException e) {</span>
+<span class="nc" id="L35">            LOG.error(&quot;File could not be parsed. Ensure your config file has the proper fields and delimiter for proper parsing.&quot; + e.getMessage());</span>
+<span class="nc" id="L36">        }</span>
+        
+<span class="nc" id="L38">    }</span>
+
+    // TODO: override the shutdown() method if you are implementing a daemon and want to take advantage of a shutdown hook for clean-up tasks
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

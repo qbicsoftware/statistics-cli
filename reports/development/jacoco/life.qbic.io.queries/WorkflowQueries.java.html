@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkflowQueries.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries</a> &gt; <span class="el_source">WorkflowQueries.java</span></div><h1>WorkflowQueries.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries;
+
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import com.google.gson.*;
+import com.google.gson.internal.LinkedTreeMap;
+import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.SpaceBlackList;
+import life.qbic.io.queries.utils.lexica.WorkflowSubtypes;
+import life.qbic.io.webservice.REST;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.lexica.ChartNames;
+
+
+/**
+ * @author fhanssen
+ * This Query class, accesses GitHub of qbicsoftware and retrieves all repos that have the topic 'workflow'.
+ * Their information is retrieved and only the decription(yCategories) and stargazer count(date) is stored in the config
+ */
+
+public class WorkflowQueries extends AQuery {
+
+<span class="nc" id="L34">    private static final Logger logger = LogManager.getLogger(WorkflowQueries.class);</span>
+
+    private final IApplicationServerApi v3;
+    private final String sessionToken;
+    private final String githubUrl;
+    private final String headerKey;
+    private final String headerValue;
+    private final int maxNumRepos;
+
+<span class="nc" id="L43">    private final List&lt;LinkedTreeMap&gt; allGithubWorkflows = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L45">    private final Map&lt;String, List&lt;LinkedTreeMap&gt;&gt; workflows = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L47">    private final Map&lt;String, ChartConfig&gt; result = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L49">    private final Map&lt;String, Object&gt; workflowTypeCountResult = new HashMap&lt;&gt;();</span>
+
+    private SearchResult&lt;Sample&gt; searchResult;
+
+    public WorkflowQueries(IApplicationServerApi v3, String sessionToken, String gitHubUrl, String gitHubHeaderKey,
+<span class="nc" id="L54">                           String gitHubHeaderValue, int maxNumRepos) {</span>
+<span class="nc" id="L55">        this.v3 = v3;</span>
+<span class="nc" id="L56">        this.sessionToken = sessionToken;</span>
+<span class="nc" id="L57">        this.githubUrl = gitHubUrl;</span>
+<span class="nc" id="L58">        this.headerKey = gitHubHeaderKey;</span>
+<span class="nc" id="L59">        this.headerValue = gitHubHeaderValue;</span>
+<span class="nc" id="L60">        this.maxNumRepos = maxNumRepos;</span>
+<span class="nc" id="L61">    }</span>
+
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples: this will also contain the workflows now
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Count everything of type workflow and group by type
+     * 4. Get all available workflow repos from our GitHub organization (That is all repos that have the topic tag 'workflow')
+     * 5. Each retrieved repo has some more tags describing for what it is used such RNA, DNA, Lipidomics etc.
+     *    Map the repos to each type from step 3: such as DNA/RNA -&gt; NGS
+     *    Additionally the star gazer count is retrieved.
+     * @return Map of generate configs is returned: Workflowtype (NGS, MA, MS) -&gt; count, Set of available workflow configs: e.g.:
+     * Available_Workflows_MA_RNA:
+     *     data:
+     *       stargazers_count:
+     *       - 1.0
+     *     settings:
+     *       subtitle: null
+     *       tabTitle: Workflow
+     *       title: Available Workflows MA_RNA
+     *       xAxisTitle: null
+     *       xCategories:
+     *       - https://api.github.com/repos/qbicsoftware/qbic-wf-microarrayQC
+     *       yAxisTitle: null
+     *       yCategories:
+     *       - Microarray QC workflow mainly using the R package oligo
+     */
+    @Override
+    public Map&lt;String, ChartConfig&gt; query() {
+
+<span class="nc" id="L91">        logger.info(&quot;Run workflow query&quot;);</span>
+
+<span class="nc" id="L93">        logger.info(&quot;Clear results&quot;);</span>
+<span class="nc" id="L94">        clear();</span>
+
+<span class="nc" id="L96">        logger.info(&quot;Count number of times workflows have been executed via OpenBis and summarize it by types.&quot;);</span>
+<span class="nc" id="L97">        retrieveSamplesFromOpenBis();</span>
+
+        //TODO comment this back in
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+<span class="nc" id="L101">        removeBlacklistedSpaces();</span>
+
+<span class="nc" id="L103">        countWorkflowExecutionCounts();</span>
+
+<span class="nc" id="L105">        logger.info(&quot;Get available QBiC workflows from GitHub via API&quot;);</span>
+<span class="nc" id="L106">        getAvailableWorkflows();</span>
+
+<span class="nc" id="L108">        logger.info(&quot;Sort workflows by type&quot;);</span>
+<span class="nc" id="L109">        workflowTypeCountResult.keySet().forEach(type -&gt; sortAvailableWorkflowsByType(type.toLowerCase()));</span>
+        //Add this LAST!
+<span class="nc" id="L111">        sortAvailableWorkflowsByType(&quot;other&quot;);</span>
+
+
+<span class="nc" id="L114">        logger.info(&quot;Set results&quot;);</span>
+<span class="nc" id="L115">        workflows.keySet().forEach(type -&gt;</span>
+<span class="nc" id="L116">                result.put(ChartNames.Available_Workflows_.toString().concat(type.toUpperCase()), customizeChartConfig(workflows.get(type), type.toUpperCase())));</span>
+
+<span class="nc" id="L118">        result.put(ChartNames.Workflow_Execution_Counts.toString(), Helpers.addPercentages(Helpers.generateChartConfig(workflowTypeCountResult, &quot;Counts&quot;, &quot;Workflow Execution Counts&quot;, &quot;Workflow&quot;)));</span>
+
+<span class="nc" id="L120">        return result;</span>
+    }
+
+    private void clear() {
+<span class="nc" id="L124">        workflows.clear();</span>
+<span class="nc" id="L125">        result.clear();</span>
+<span class="nc" id="L126">        workflowTypeCountResult.clear();</span>
+<span class="nc" id="L127">    }</span>
+
+    @Override
+    void removeBlacklistedSpaces() {
+
+<span class="nc" id="L132">        List&lt;Sample&gt; removables = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L133">        searchResult.getObjects().forEach(experiment -&gt; {</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {</span>
+<span class="nc" id="L135">                removables.add(experiment);</span>
+            }
+<span class="nc" id="L137">        });</span>
+<span class="nc" id="L138">        searchResult.getObjects().removeAll(removables);</span>
+
+<span class="nc" id="L140">        logger.info(&quot;Removed results from blacklisted OpenBis Spaces: &quot; + SpaceBlackList.getList().toString());</span>
+
+<span class="nc" id="L142">    }</span>
+
+    //call this for each workflow and name it after its type
+    private ChartConfig customizeChartConfig(List&lt;LinkedTreeMap&gt; list, String title) {
+<span class="nc" id="L146">        Map&lt;String, Object&gt; resultMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L147">        list.forEach(a -&gt; resultMap.put(Objects.toString(a.get(&quot;url&quot;), &quot;&quot;), a.get(&quot;stargazers_count&quot;)));</span>
+
+<span class="nc" id="L149">        ChartConfig chartConfig = Helpers.generateChartConfig(resultMap, &quot;stargazers_count&quot;, &quot;Available Workflows &quot;.concat(title), &quot;Workflow&quot;);</span>
+
+<span class="nc" id="L151">        List&lt;String&gt; descriptions = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L152">        list.forEach(a -&gt; descriptions.add(Objects.toString(a.get(&quot;description&quot;), &quot;&quot;)));</span>
+<span class="nc" id="L153">        chartConfig.getSettings().setyCategories(new ArrayList&lt;&gt;(descriptions));</span>
+
+<span class="nc" id="L155">        return chartConfig;</span>
+    }
+
+    private void getAvailableWorkflows() throws RuntimeException{
+<span class="nc" id="L159">        int page_counter = 1; //GitHub API does not support pagination right now, 100 results can be displayed at once</span>
+        // at most, so we have to access all pages by hand
+
+<span class="nc" id="L162">        String line = &quot; &quot;;</span>
+<span class="nc bnc" id="L163" title="All 4 branches missed.">        while (line != null &amp;&amp; !line.contains(&quot;[]&quot;)) { // no results are shown with [] (empty page sign)from API</span>
+<span class="nc" id="L164">            try (BufferedReader rd = new BufferedReader(</span>
+<span class="nc" id="L165">                    new InputStreamReader(REST.call(githubUrl.concat(&quot;?page=&quot;.concat(String.valueOf(page_counter))</span>
+<span class="nc" id="L166">                                    .concat(&quot;&amp;per_page=100&quot;)),</span>
+                            headerKey,
+                            headerValue)))) {
+
+
+<span class="nc bnc" id="L171" title="All 4 branches missed.">                while ((line = rd.readLine()) != null &amp;&amp; !&quot;[]&quot;.equals(line)) {</span>
+<span class="nc" id="L172">                    retrieveIfWorkflow(line);</span>
+                }
+
+<span class="nc" id="L175">            } catch (IOException e) {</span>
+<span class="nc" id="L176">                logger.error(&quot;Access of GitHub via API failed with: &quot; + e.getMessage());</span>
+<span class="nc" id="L177">            }</span>
+            //Access next 100 results
+<span class="nc" id="L179">            page_counter++;</span>
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">            if (page_counter &gt; maxNumRepos/100 + 1) { //page counter is 1-based, so add 1.</span>
+<span class="nc" id="L182">                throw new RuntimeException(&quot;GitHub access exception. Query attempts to retrieve more repos than allowed by maxNumRepos.&quot;);</span>
+            }
+        }
+<span class="nc" id="L185">    }</span>
+
+    private void retrieveIfWorkflow(String line) {
+<span class="nc" id="L188">        GsonBuilder builder = new GsonBuilder();</span>
+<span class="nc" id="L189">        Object o = builder.create().fromJson(line, Object.class);</span>
+<span class="nc" id="L190">        ((ArrayList) o).forEach(id -&gt; {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (((LinkedTreeMap) id).containsKey(&quot;topics&quot;)) {</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                if (((ArrayList) ((LinkedTreeMap) id).get(&quot;topics&quot;)).contains(&quot;workflow&quot;)) {</span>
+<span class="nc" id="L193">                    allGithubWorkflows.add((LinkedTreeMap) id);</span>
+                }
+            }
+
+<span class="nc" id="L197">        });</span>
+<span class="nc" id="L198">    }</span>
+
+    private void sortAvailableWorkflowsByType(String type) {
+<span class="nc" id="L201">        List&lt;LinkedTreeMap&gt; removables = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L202">        allGithubWorkflows.forEach(id -&gt; {</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">            if (((ArrayList) id.get(&quot;topics&quot;)).contains(type) || type.equals(&quot;other&quot;)) {</span>
+
+<span class="nc" id="L205">                List&lt;String&gt; listOne = Helpers.getCommonElements((ArrayList&lt;String&gt;) id.get(&quot;topics&quot;),</span>
+<span class="nc" id="L206">                         WorkflowSubtypes.getList());</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                if(listOne.size() == 0){</span>
+<span class="nc" id="L209">                    Helpers.addEntryToStringListMap(workflows, type, id);</span>
+                }
+<span class="nc" id="L211">                listOne.forEach(l -&gt; Helpers.addEntryToStringListMap(workflows, type.concat(&quot;_&quot;).concat(l), (LinkedTreeMap)id));</span>
+<span class="nc" id="L212">                removables.add(id);</span>
+            }
+<span class="nc" id="L214">        });</span>
+<span class="nc" id="L215">        allGithubWorkflows.removeAll(removables);</span>
+<span class="nc" id="L216">    }</span>
+
+    private void retrieveSamplesFromOpenBis() {
+        //Retrieve samples
+        //Use samples and not experiments here, because we need the space codes to remove blacklisted spaces. ExperimentFetchOptions don't return space code
+<span class="nc" id="L221">        SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();</span>
+<span class="nc" id="L222">        SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();</span>
+<span class="nc" id="L223">        sampleFetchOptions.withType();</span>
+<span class="nc" id="L224">        sampleFetchOptions.withSpace();</span>
+
+<span class="nc" id="L226">        searchResult = v3.searchSamples(sessionToken, sampleSearchCriteria, sampleFetchOptions);</span>
+<span class="nc" id="L227">    }</span>
+
+    private void countWorkflowExecutionCounts(){
+        //Count workflow execution times
+<span class="nc" id="L231">        searchResult.getObjects().forEach(o -&gt;{</span>
+<span class="nc" id="L232">            String[] arr = o.getType().toString().split(&quot;_&quot;);</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            if(arr.length &gt; 1) {</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                if (arr[1].equals(&quot;WF&quot;)) {</span>
+<span class="nc" id="L235">                    Helpers.addEntryToStringCountMap(workflowTypeCountResult, arr[2], 1);</span>
+                }
+            }
+<span class="nc" id="L238">        });</span>
+<span class="nc" id="L239">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

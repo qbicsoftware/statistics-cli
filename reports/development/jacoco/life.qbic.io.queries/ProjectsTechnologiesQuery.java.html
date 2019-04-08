@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProjectsTechnologiesQuery.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries</a> &gt; <span class="el_source">ProjectsTechnologiesQuery.java</span></div><h1>ProjectsTechnologiesQuery.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries;
+
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.common.search.SearchResult;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.fetchoptions.SampleFetchOptions;
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.search.SampleSearchCriteria;
+import life.qbic.datamodel.identifiers.SampleCodeFunctions;
+import life.qbic.datamodel.samples.SampleType;
+import life.qbic.exceptions.InvalidProjectCodeException;
+import life.qbic.io.queries.utils.Helpers;
+import life.qbic.io.queries.utils.lexica.SpaceBlackList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.lexica.ChartNames;
+import submodule.lexica.Translator;
+
+import java.util.*;
+
+/**
+ * @author fhanssen
+ */
+public class ProjectsTechnologiesQuery extends AQuery {
+
+
+<span class="nc" id="L27">    private static final Logger logger = LogManager.getLogger(ProjectsTechnologiesQuery.class);</span>
+
+    private final IApplicationServerApi v3;
+    private final String sessionToken;
+
+    private SearchResult&lt;Sample&gt; searchResult;
+
+<span class="nc" id="L34">    private final Map&lt;String, Object&gt; resultsProjectCounts = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L36">    private final Map&lt;String, Set&lt;String&gt;&gt; projectCodeToType = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L37">    private final Map&lt;Set&lt;String&gt;, Integer&gt; multiOmicsCount = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L39">    public ProjectsTechnologiesQuery(IApplicationServerApi v3, String sessionToken) {</span>
+<span class="nc" id="L40">        this.v3 = v3;</span>
+<span class="nc" id="L41">        this.sessionToken = sessionToken;</span>
+<span class="nc" id="L42">    }</span>
+
+
+    /**
+     * This query executes the following steps:
+     * 1. Get all samples of type Q_TEST_SAMPLE
+     * 2. Remove all samples belonging to spaces that have been blacklisted
+     * 3. Extract project code (first 5 chars of sample code) and map to its type: NGS, MA, MS
+     * 4. Count projects by type
+     * 5. For multi omics projects: get multiomics combination: e.g. NGS+MA etc
+     * 6. Format data and add to config
+     * @return Map of generate configs is returned: Type(MA, NGA, MS) -&gt; Count, multi omics combination -&gt; count
+     */
+    @Override
+    public Map&lt;String, ChartConfig&gt; query() {
+
+<span class="nc" id="L58">        logger.info(&quot;Run projects-by-technologies query&quot;);</span>
+
+<span class="nc" id="L60">        clear();</span>
+
+<span class="nc" id="L62">        retrieveDataFromOpenBis();</span>
+
+        //TODO comment this back in
+        //TODO however for testing I somehow only have access to chickenfarm stuff anymore, so it has to be commented out
+<span class="nc" id="L66">        removeBlacklistedSpaces();</span>
+
+<span class="nc" id="L68">        createProjectcodeTypeMap();</span>
+<span class="nc" id="L69">        countProjectsByType();</span>
+
+<span class="nc" id="L71">        Map&lt;String, ChartConfig&gt; map = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L73">        map.put(ChartNames.Projects.toString(), Helpers.addPercentages(Helpers.generateChartConfig(resultsProjectCounts, &quot;project&quot;, &quot;Project Counts with Measured Samples&quot;, &quot;Projects&quot;)));</span>
+<span class="nc" id="L74">        map.put(ChartNames.Project_Multi_omics.toString(), Helpers.generateChartConfig(countMultiOmicsCombinations(), &quot;multiomics&quot;, &quot;Multiomics count&quot;, &quot;Projects&quot;));</span>
+
+<span class="nc" id="L76">        return map;</span>
+    }
+
+    private Map&lt;String, Object&gt; countMultiOmicsCombinations() {
+<span class="nc" id="L80">        Map&lt;String, Object&gt; mTemp = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        for (Set&lt;String&gt; set : multiOmicsCount.keySet()) {</span>
+<span class="nc" id="L82">            ArrayList&lt;String&gt; list = new ArrayList&lt;&gt;(set);</span>
+<span class="nc" id="L83">            String name = &quot;&quot;;</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (int i = 0; i &lt; set.size() - 1; i++) {</span>
+<span class="nc" id="L85">                name = name.concat(Translator.getTranslation(list.get(i))).concat(&quot; + &quot;);</span>
+            }
+<span class="nc" id="L87">            name = name.concat(Translator.getTranslation(list.get(list.size() - 1)));</span>
+<span class="nc" id="L88">            mTemp.put(name, multiOmicsCount.get(set));</span>
+<span class="nc" id="L89">        }</span>
+<span class="nc" id="L90">        return mTemp;</span>
+    }
+
+    private void clear() {
+<span class="nc" id="L94">        resultsProjectCounts.clear();</span>
+<span class="nc" id="L95">    }</span>
+
+    private void retrieveDataFromOpenBis() {
+
+<span class="nc" id="L99">        SampleSearchCriteria sampleSearchCriteria = new SampleSearchCriteria();</span>
+<span class="nc" id="L100">        sampleSearchCriteria.withType().withCode().thatEquals(SampleType.Q_TEST_SAMPLE.toString());</span>
+
+<span class="nc" id="L102">        SampleFetchOptions sampleFetchOptions = new SampleFetchOptions();</span>
+<span class="nc" id="L103">        sampleFetchOptions.withChildren().withType();</span>
+<span class="nc" id="L104">        sampleFetchOptions.withSpace();</span>
+
+<span class="nc" id="L106">        searchResult = v3.searchSamples(sessionToken, sampleSearchCriteria, sampleFetchOptions);</span>
+
+<span class="nc" id="L108">    }</span>
+
+    @Override
+    void removeBlacklistedSpaces() {
+
+<span class="nc" id="L113">        List&lt;Sample&gt; removables = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L114">        searchResult.getObjects().forEach(experiment -&gt; {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (SpaceBlackList.getList().contains(experiment.getSpace().getCode())) {</span>
+<span class="nc" id="L116">                removables.add(experiment);</span>
+            }
+<span class="nc" id="L118">        });</span>
+<span class="nc" id="L119">        searchResult.getObjects().removeAll(removables);</span>
+<span class="nc" id="L120">        logger.info(&quot;Removed resultsProjectCounts from blacklisted OpenBis Spaces: &quot; + SpaceBlackList.getList().toString());</span>
+
+<span class="nc" id="L122">    }</span>
+
+    private void createProjectcodeTypeMap() {
+<span class="nc" id="L125">        searchResult.getObjects().forEach(sample -&gt; {</span>
+
+<span class="nc" id="L127">            Set&lt;String&gt; omicsType = new HashSet&lt;&gt;();</span>
+
+            //Determine omics type per sample
+<span class="nc" id="L130">            sample.getChildren().forEach(c -&gt; {</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                if (Helpers.isOmicsRun(c.getType().toString())) {</span>
+<span class="nc" id="L132">                    omicsType.add(c.getType().toString().replace(&quot;SampleType &quot;, &quot;&quot;));</span>
+                }
+<span class="nc" id="L134">            });</span>
+
+            try{
+<span class="nc" id="L137">                matchProjectCodeToType(sample.getCode(), omicsType);</span>
+<span class="nc" id="L138">            }catch(InvalidProjectCodeException e){</span>
+<span class="nc" id="L139">                logger.error(&quot;Query &quot; + this.getClass() + &quot;:&quot; + e.getMessage());</span>
+<span class="nc" id="L140">                logger.error(e.getStackTrace());</span>
+
+<span class="nc" id="L142">            }</span>
+<span class="nc" id="L143">        });</span>
+
+<span class="nc" id="L145">    }</span>
+
+    private void matchProjectCodeToType(String code, Set&lt;String&gt; omicsType) throws InvalidProjectCodeException{
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (code.length() &gt; 5) {</span>
+<span class="nc" id="L149">            String projectCode = SampleCodeFunctions.getProjectPrefix(code);</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (projectCodeToType.containsKey(projectCode)) {</span>
+<span class="nc" id="L151">                omicsType.addAll(projectCodeToType.get(projectCode));</span>
+            }
+<span class="nc" id="L153">            projectCodeToType.put(projectCode, omicsType);</span>
+<span class="nc" id="L154">        } else {</span>
+<span class="nc" id="L155">            throw new InvalidProjectCodeException(&quot;Sample code is too short: &quot; + code + &quot;. At least 5 characters are expected in order to comply with sample code pattern of &quot; +</span>
+                    &quot;&lt;projectcode&gt;.concat(&lt;sampleidentifier&gt;).&quot;);
+        }
+<span class="nc" id="L158">    }</span>
+
+    private void countProjectsByType() {
+
+<span class="nc" id="L162">        projectCodeToType.keySet().forEach(projectCode -&gt; {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            if (projectCodeToType.get(projectCode).size() &gt; 1) {</span>
+
+<span class="nc" id="L165">                Helpers.addEntryToStringCountMap(resultsProjectCounts, Translator.Multi_omics.getOriginal(), 1);</span>
+
+<span class="nc" id="L167">                Helpers.addEntryToSetCountMap(multiOmicsCount, projectCodeToType.get(projectCode), 1);</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            } else if (projectCodeToType.get(projectCode).size() == 1) {</span>
+<span class="nc" id="L170">                Helpers.addEntryToStringCountMap(resultsProjectCounts, projectCodeToType.get(projectCode).iterator().next(), 1);</span>
+            }
+            //else{
+            //If unknown ignore
+            //}
+<span class="nc" id="L175">        });</span>
+<span class="nc" id="L176">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

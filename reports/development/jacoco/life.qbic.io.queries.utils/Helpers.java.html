@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Helpers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Statistics CLI</a> &gt; <a href="index.source.html" class="el_package">life.qbic.io.queries.utils</a> &gt; <span class="el_source">Helpers.java</span></div><h1>Helpers.java</h1><pre class="source lang-java linenums">package life.qbic.io.queries.utils;
+
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import submodule.data.ChartConfig;
+import submodule.data.ChartSettings;
+
+import java.util.*;
+
+/**
+ * @author fhanssen
+ * This static class holds useful helper methods, that have to be reused for multiple queries.
+ */
+<span class="nc" id="L15">public final class Helpers {</span>
+
+<span class="fc" id="L17">    private static final Logger logger = LogManager.getLogger(Helpers.class);</span>
+
+
+    public static void addEntryToStringCountMap(Map map, String key, int count) {
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        if (map.containsKey(key)) {</span>
+<span class="nc" id="L22">            int counter = (int)map.get(key);</span>
+<span class="nc" id="L23">            map.put(key, counter + count);</span>
+<span class="nc" id="L24">        } else {</span>
+<span class="nc" id="L25">            map.put(key, count);</span>
+        }
+<span class="nc" id="L27">    }</span>
+
+    public static void addEntryToStringListMap(Map map, String key, Object listElement) {
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (map.containsKey(key)) {</span>
+<span class="nc" id="L32">            List l = (List)map.get(key);</span>
+<span class="nc" id="L33">            l.add( listElement);</span>
+<span class="nc" id="L34">            map.put(key, l);</span>
+<span class="nc" id="L35">        } else {</span>
+<span class="nc" id="L36">            List l = new ArrayList();</span>
+<span class="nc" id="L37">            l.add(listElement);</span>
+<span class="nc" id="L38">            map.put(key, l);</span>
+        }
+<span class="nc" id="L40">    }</span>
+
+    public static void addEntryToSetCountMap(Map map, Set key, int count) {
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (map.containsKey(key)) {</span>
+<span class="nc" id="L45">            int counter = (int)map.get(key);</span>
+<span class="nc" id="L46">            map.put(key, counter + count);</span>
+<span class="nc" id="L47">        } else {</span>
+<span class="nc" id="L48">            map.put(key, count);</span>
+        }
+<span class="nc" id="L50">    }</span>
+
+    public static List&lt;String&gt; getCommonElements(List&lt;String&gt; listOne, List&lt;String&gt; listTwo){
+<span class="nc" id="L53">        listOne.replaceAll(String::toUpperCase);</span>
+<span class="nc" id="L54">        listTwo.replaceAll(String::toUpperCase);</span>
+<span class="nc" id="L55">        listOne.retainAll(listTwo);</span>
+<span class="nc" id="L56">        return listOne;</span>
+    }
+
+    /**
+     * Method turns retrieved data to a chart config. can be arbitrarily extended with more parameters. Be careful with adding data.
+     * You somehow need to ensure that your data order matches the category order (here xCategories holds the names, data
+     * holds the respective values, the need to be in the correct order to allow matching later!)
+     *
+     * Most common: xcategories and data: so this is used here, anything else has to be added to the returned chartconfig
+     * @param result Map holding categories as key, and the respective values as values
+     * @param name name in mainconfig, should be unique to all others
+     * @param chartTitle  Chart title, stored in config and later displayed
+     * @param tabTitle Title displayed in tab header
+     * @return ChartConfig
+     */
+    public static ChartConfig generateChartConfig(Map&lt;String, Object&gt; result, String name, String chartTitle, String tabTitle) {
+
+<span class="nc" id="L73">        logger.info(&quot;Generate ChartConfig for: &quot; + name + &quot; &quot; + chartTitle);</span>
+
+<span class="nc" id="L75">        ChartConfig chartConfig = new ChartConfig();</span>
+
+        //Add chart settings
+<span class="nc" id="L78">        ChartSettings chartSettings = new ChartSettings();</span>
+<span class="nc" id="L79">        chartSettings.setTitle(chartTitle);</span>
+<span class="nc" id="L80">        chartSettings.setTabTitle(tabTitle);</span>
+<span class="nc" id="L81">        System.out.println(&quot;\nTabtitle &quot; + tabTitle);</span>
+        //Set xCategories
+<span class="nc" id="L83">        List&lt;String&gt; xCategories = new ArrayList&lt;&gt;(result.keySet());</span>
+<span class="nc" id="L84">        chartSettings.setxCategories(new ArrayList&lt;&gt;(xCategories));</span>
+
+        //Add settings to chart config
+<span class="nc" id="L87">        chartConfig.setSettings(chartSettings);</span>
+
+        //Add chart data: be careful with order of data: must match xCategory order
+<span class="nc" id="L90">        Map&lt;Object, ArrayList&lt;Object&gt;&gt; count = new HashMap&lt;&gt;();</span>
+
+        //This is necessary to always ensure proper order and mapping of key value pairs in YAML!
+<span class="nc" id="L93">        ArrayList&lt;Object&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L94">        xCategories.forEach(o -&gt; list.add(result.get(o)));</span>
+<span class="nc" id="L95">        count.put(name, list);</span>
+<span class="nc" id="L96">        chartConfig.setData(count);</span>
+
+<span class="nc" id="L98">        return chartConfig;</span>
+    }
+
+
+    /**
+     * This method adds the percentages as yCategories to a given chartconfig. This means it takes each value from
+     * the xCategories and computes its percentage to the total sum. The respective percentage can then be
+     * found at the same position in the yCategories.
+     * @param chartConfig
+     * @return
+     */
+    public static ChartConfig addPercentages(ChartConfig chartConfig){
+<span class="nc" id="L110">        int totalCount = 0;</span>
+<span class="nc" id="L111">        Object[] objectArray = chartConfig.getData().keySet().toArray(new Object[0]);</span>
+<span class="nc" id="L112">        String[] keySet = Arrays.asList(objectArray).toArray(new String[objectArray.length]);</span>
+
+        //Compute total count
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        for (String aKeySet : keySet) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            for (int i = 0; i &lt; chartConfig.getData().get(aKeySet).size(); i++) {</span>
+<span class="nc" id="L117">                totalCount += (int)chartConfig.getData().get(aKeySet).get(i);</span>
+            }
+        }
+
+        //Compute percentage and round to one decimal position
+<span class="nc" id="L122">        List&lt;Double&gt; yCategories = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        for (String aKeySet : keySet) {</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            for (int i = 0; i &lt; chartConfig.getData().get(aKeySet).size(); i++) {</span>
+<span class="nc" id="L125">                yCategories.add( Math.round(10.0 * (100.0 * (double) ((int)chartConfig.getData().get(aKeySet).get(i))/(double) ((int)totalCount)))/ 10.0);</span>
+            }
+        }
+<span class="nc" id="L128">        chartConfig.getSettings().setyCategories(new ArrayList&lt;&gt;(yCategories));</span>
+<span class="nc" id="L129">        return chartConfig;</span>
+    }
+
+    public static boolean isOmicsRun(String name) {
+<span class="fc" id="L133">        String[] array = name.split(&quot;_&quot;);</span>
+<span class="fc bfc" id="L134" title="All 4 branches covered.">        return array[array.length - 1].equals(&quot;RUN&quot;) &amp;&amp; !array[1].equals(&quot;WF&quot;);</span>
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

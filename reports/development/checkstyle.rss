@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<rss version="0.91">
+  <channel>
+    <title>Statistics CLI - Checkstyle report</title>
+    <link>http://github.com/qbicsoftware/statistics-cli</link>
+    <description>Statistics CLI - Checkstyle report</description>
+    <language>en-us</language>
+    <copyright>&#169;2019</copyright>
+    <item>
+      <title>File: 17,
+             Errors: 0,
+             Warnings: 910,
+             Infos: 0
+      </title>
+            <link>http://github.com/qbicsoftware/statistics-cli/checkstyle.html</link>
+      <description>
+        <p>Click <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html">here</a> for the full Checkstyle report.</p>
+
+        <table summary="Files" boder="1">
+          <thead>
+            <tr>
+              <th>Files</th>
+              <th style="width:30px;"><abbr title="Info">I</abbr></th>
+              <th style="width:30px;"><abbr title="Warning">W</abbr></th>
+              <th style="width:30px;"><abbr title="Error">E</abbr></th>
+            </tr>
+          </thead>
+          <tbody>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.controller.MainController.java">life/qbic/controller/MainController.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  62
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.utils.lexica.SpaceBlackList.java">life/qbic/io/queries/utils/lexica/SpaceBlackList.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  7
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.AQuery.java">life/qbic/io/queries/AQuery.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  10
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.webservice.OpenBisAccess.java">life/qbic/io/webservice/OpenBisAccess.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  33
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.utils.lexica.WorkflowSubtypes.java">life/qbic/io/queries/utils/lexica/WorkflowSubtypes.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  7
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.utils.Helpers.java">life/qbic/io/queries/utils/Helpers.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  101
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.ProjectsTechnologiesQuery.java">life/qbic/io/queries/ProjectsTechnologiesQuery.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  112
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.OrganismCountQuery.java">life/qbic/io/queries/OrganismCountQuery.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  221
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#tool.properties">tool.properties</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.writer.YAMLWriter.java">life/qbic/io/writer/YAMLWriter.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  26
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.cli.MainCommand.java">life/qbic/cli/MainCommand.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  24
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.cli.MainEntryPoint.java">life/qbic/cli/MainEntryPoint.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  8
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.SampleTypeQuery.java">life/qbic/io/queries/SampleTypeQuery.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  95
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.cli.MainTool.java">life/qbic/cli/MainTool.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  15
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.exceptions.InvalidProjectCodeException.java">life/qbic/exceptions/InvalidProjectCodeException.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  7
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.queries.WorkflowQueries.java">life/qbic/io/queries/WorkflowQueries.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  162
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/qbicsoftware/statistics-cli/checkstyle.html#life.qbic.io.webservice.REST.java">life/qbic/io/webservice/REST.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  20
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                      </tbody>
+        </table>
+        
+      </description>
+    </item>
+  </channel>
+</rss>
+
